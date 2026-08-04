@@ -1,10 +1,4 @@
-/**
- * Cubie definitions, cubie-cube representation + methods for manipulating it
- */
-
-#ifndef __CUBIE__
-#define __CUBIE__
-
+#pragma once
 #include <string>
 
 namespace cubie {
@@ -83,5 +77,3 @@ namespace cubie {
   bool operator!=(const cube& c1, const cube& c2);
 
 }
-
-#endif

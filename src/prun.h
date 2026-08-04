@@ -1,11 +1,6 @@
-/**
- * Pruning table generation and lookup.
- */
-
-#ifndef __PRUN__
-#define __PRUN__
-
+#pragma once
 #include <cstdint>
+
 #include "coord.h"
 #include "sym.h"
 
@@ -15,11 +10,7 @@ namespace prun {
   const int N_CORNUD2 = sym::N_CORNERS * coord::N_UDEDGES2;
   const int N_CSLICE2 = coord::N_CORNERS * coord::N_SLICE2;
 
-  #ifdef AX
-    using prun1 = uint64_t;
-  #else
-    using prun1 = uint32_t;
-  #endif
+  using prun1 = uint32_t;
 
   extern prun1  *phase1;
   extern uint8_t *phase2;
@@ -32,5 +23,3 @@ namespace prun {
   bool init(bool file = true);
 
 }
-
-#endif

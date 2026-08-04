@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <random>
+
 #include "coord.h"
 
 namespace cubie {

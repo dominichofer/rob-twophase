@@ -1,10 +1,4 @@
-/**
- * Coord definitions, utilities and move tables.
- */
-
-#ifndef __COORD__
-#define __COORD__
-
+#pragma once
 #include "cubie.h"
 #include "move.h"
 
@@ -62,5 +56,3 @@ namespace coord {
   void init();
 
 }
-
-#endif

@@ -1,10 +1,4 @@
-/**
- * Symmetry definition and reduction/conjugation tables.
- */
-
-#ifndef __SYM__
-#define __SYM__
-
+#pragma once
 #include "coord.h"
 #include "cubie.h"
 #include "move.h"
@@ -13,17 +7,10 @@ namespace sym {
 
   const int COUNT = 48;
 
-  #ifdef F5
-    const int COUNT_SUB = 4; // number of symmetries used for reduction
-    const int N_FSLICE1 = 255664;
-    const int N_CORNERS = 10368;
-    const int ROT = 36; // 90 degree rotation around FB-axis
-  #else
-    const int COUNT_SUB = 16;
-    const int N_FSLICE1 = 64430;
-    const int N_CORNERS = 2768;
-    const int ROT = 16; // 120 degree rotation around axis through URF and DLB corner
-  #endif
+  const int COUNT_SUB = 16;
+  const int N_FSLICE1 = 64430;
+  const int N_CORNERS = 2768;
+  const int ROT = 16; // 120 degree rotation around axis through URF and DLB corner
 
   extern cubie::cube cubes[COUNT];
   extern int inv[COUNT];
@@ -49,5 +36,3 @@ namespace sym {
   void init();
 
 }
-
-#endif

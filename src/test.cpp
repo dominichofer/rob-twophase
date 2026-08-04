@@ -1,7 +1,3 @@
-/**
- * Tests & sanity checks for individual parts of the solver; very useful during development.
- */
-
 #include <bitset>
 #include <chrono>
 #include <iostream>

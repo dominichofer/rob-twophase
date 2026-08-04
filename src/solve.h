@@ -1,12 +1,11 @@
-#ifndef __SOLVE__
-#define __SOLVE__
-
+#pragma once
 #include <condition_variable>
 #include <mutex>
 #include <queue>
 #include <utility>
 #include <thread>
-# include "move.h"
+
+#include "move.h"
 
 namespace solve {
 
@@ -24,11 +23,7 @@ namespace solve {
   };
 
   // Number of search directions
-  #ifdef F5
-    const int N_DIRS = 4;
-  #else
-    const int N_DIRS = 6;
-  #endif
+  const int N_DIRS = 6;
 
   class Engine {
 
@@ -69,5 +64,3 @@ namespace solve {
   };
 
 }
-
-#endif

@@ -5,37 +5,14 @@
 #include <cstring>
 
 namespace prun {
-  const std::string SAVE = "twophase-"
-    #ifdef AX
-      "ax"
-    #endif
-    #ifdef QT
-      "qt"
-    #else
-      "ht"
-    #endif
-    #ifdef F5
-      "-f5"
-    #endif
-    ".tbl"
-  ;
+  const std::string SAVE = "twophase-ht.tbl";
 
   const int EMPTY = 0xff;
 
-  #ifdef AX
-    const int BITS_PER_AX = 16; // bits used for encoding an axis in the ext. phase 1 table
-  #else
-    const int BITS_PER_AX = 8;
-  #endif
-  #ifdef QT
-    const int BITS_PER_M = 2; // bits per move
-    const int N_SIMP = 4; // number of simple moves
-    const int N_AX = 4; // number of axial moves
-  #else
-    const int BITS_PER_M = 1;
-    const int N_SIMP = 6;
-    const int N_AX = 9;
-  #endif
+  const int BITS_PER_AX = 8;
+  const int BITS_PER_M = 1;
+  const int N_SIMP = 6;
+  const int N_AX = 9;
 
   // Used to remap symmetry ext. phase 1 table entries back to actual situation
   move::mask remap[2][16][1 << BITS_PER_AX];
@@ -61,84 +38,50 @@ namespace prun {
     int n_per_face = N_SIMP / 2;
 
     int inv = rev(mask, n_per_face) | rev(mask, n_per_face, n_per_face);
-    #ifdef AX
-      inv |= rev(mask, N_AX, N_SIMP);
-    #endif
     return inv;
   }
   
   int flip(int mask) {
     int per_face = N_SIMP / 2;
     int flipped = rev(mask, 2, 0, BITS_PER_M * per_face);
-
-    #ifdef AX
-      mask >>= BITS_PER_M * N_SIMP;
-
-      // Flipping an axis means to transpose the axial move-mask (M N) (M N2) (M N') ... to (N M) (N M2) (N M') ...
-      int fax = 0;
-      for (int i = 0; i < per_face; i++) {
-        for (int j = 0; j < per_face; j++)
-          fax |= ((mask >> BITS_PER_M * (per_face * i + j)) & ones(BITS_PER_M)) << BITS_PER_M * (per_face * j + i);
-      }
-      flipped |= fax << BITS_PER_M * N_SIMP;
-    #endif
-
     return flipped;
   }
 
   void init_base() {
     /* It is probably cleanest to simply handle the special HT case individually */
-    #ifndef AX
-      #ifndef QT
-        for (int eff = 0; eff < 16; eff++) {
-          for (int mask = 0; mask < 256; mask++) {
-            int mask1 = mask & 0xf;
-            int mask2 = (mask & 0xf0) >> 4;
+    for (int eff = 0; eff < 16; eff++) {
+      for (int mask = 0; mask < 256; mask++) {
+        int mask1 = mask & 0xf;
+        int mask2 = (mask & 0xf0) >> 4;
 
-            if (sym::eff_inv(eff)) {
-              mask1 = rev(mask1, 3, 1) | (mask1 & 1);
-              mask2 = rev(mask2, 3, 1) | (mask2 & 1);
-            }
-            if (sym::eff_flip(eff))
-              std::swap(mask1, mask2);
-
-            remap[0][eff][mask] = ((mask1 & 1) ? 0 : ~(mask1 >> 1) & 0x7) << 6 * sym::eff_shift(eff);
-            remap[1][eff][mask] = ((mask1 & 1) ? ~(mask1 >> 1) & 0x7 : 0x7) << 6 * sym::eff_shift(eff);
-            remap[0][eff][mask] |= ((mask2 & 1) ? 0 : ~(mask2 >> 1) & 0x7) << 6 * sym::eff_shift(eff) + 3;
-            remap[1][eff][mask] |= ((mask2 & 1) ? ~(mask2 >> 1) & 0x7 : 0x7) << 6 * sym::eff_shift(eff) + 3;
-          }
+        if (sym::eff_inv(eff)) {
+          mask1 = rev(mask1, 3, 1) | (mask1 & 1);
+          mask2 = rev(mask2, 3, 1) | (mask2 & 1);
         }
-        return;
-      #endif
-    #endif
+        if (sym::eff_flip(eff))
+          std::swap(mask1, mask2);
+
+        remap[0][eff][mask] = ((mask1 & 1) ? 0 : ~(mask1 >> 1) & 0x7) << 6 * sym::eff_shift(eff);
+        remap[1][eff][mask] = ((mask1 & 1) ? ~(mask1 >> 1) & 0x7 : 0x7) << 6 * sym::eff_shift(eff);
+        remap[0][eff][mask] |= ((mask2 & 1) ? 0 : ~(mask2 >> 1) & 0x7) << 6 * sym::eff_shift(eff) + 3;
+        remap[1][eff][mask] |= ((mask2 & 1) ? ~(mask2 >> 1) & 0x7 : 0x7) << 6 * sym::eff_shift(eff) + 3;
+      }
+    }
+    return;
 
     for (int eff = 0; eff < 16; eff++) {
       for (int mask = 0; mask < (1 << BITS_PER_AX); mask++) {
         move::mask mask1 = mask;
-        #ifndef QT
-          mask1 >>= 1; // first bit encodes direction in HT
-        #endif
+        mask1 >>= 1; // first bit encodes direction in HT
 
         if (sym::eff_inv(eff))
           mask1 = inv(mask1);
         if (sym::eff_flip(eff))
           mask1 = flip(mask1);
 
-        #ifdef QT
-          remap[0][eff][mask] = 0;
-          remap[1][eff][mask] = 0;
-          for (int i = 0; i < BITS_PER_AX / 2; i++) {
-            remap[0][eff][mask] |= ((mask1 & 0x3) == 0) << i;
-            remap[1][eff][mask] |= ((mask1 & 0x3) <= 1) << i;
-            mask1 >>= 2;
-          }
-          remap[0][eff][mask] <<= (BITS_PER_AX / 2) * sym::eff_shift(eff);
-          remap[1][eff][mask] <<= (BITS_PER_AX / 2) * sym::eff_shift(eff);
-        #else
-          move::mask o = ones(BITS_PER_AX - 1); // first bit indicates direction but is not a move
-          remap[0][eff][mask] = ((mask & 1) ? 0 : ~mask1 & o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
-          remap[1][eff][mask] = ((mask & 1) ? ~mask1 & o : o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
-        #endif
+        move::mask o = ones(BITS_PER_AX - 1); // first bit indicates direction but is not a move
+        remap[0][eff][mask] = ((mask & 1) ? 0 : ~mask1 & o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
+        remap[1][eff][mask] = ((mask & 1) ? ~mask1 & o : o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
       }
     }
   }
@@ -191,37 +134,26 @@ namespace prun {
             }
 
             prun1 prun = 0;
-            #ifdef QT
-              // In QT there is enough space to simply encode the effect of every move in 2 bits
-              for (int m = n_moves - 1; m >= 0; m--)
-                  prun = (prun << 2) | (deltas[m] + 1);
-            #else
-              #ifndef AX
-                int n_ax = 6; // in standard (HT) mode we have to treat every face as an individual axis for encoding
-                int bits_per_ax = 4;
-              #else
-                int n_ax = 3;
-                int bits_per_ax = BITS_PER_AX;
-              #endif
-                /* Encode from left to right to preserve indexing of moves */
-                for (int ax = n_ax - 1; ax >= 0; ax--) {
-                  bool away = false; // first bit of axis encoding (whether any move brings us further from the goal)
-                  for (int i = ax * (bits_per_ax - 1); i < (ax + 1) * (bits_per_ax - 1); i++) {
-                    if (deltas[i] != 0) {
-                      if (deltas[i] > 0)
-                        away = true;
-                      break; // stop immediately once we found a value != 0
-                    }
-                  }
-
-                  int tmp = 0;
-                  for (int i = (ax + 1) * (bits_per_ax - 1) - 1; i >= ax * (bits_per_ax - 1); i--)
-                    tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
-                  tmp |= away;
-
-                  prun = (prun << bits_per_ax) | tmp;
+            int n_ax = 3;
+            int bits_per_ax = BITS_PER_AX;
+            /* Encode from left to right to preserve indexing of moves */
+            for (int ax = n_ax - 1; ax >= 0; ax--) {
+              bool away = false; // first bit of axis encoding (whether any move brings us further from the goal)
+              for (int i = ax * (bits_per_ax - 1); i < (ax + 1) * (bits_per_ax - 1); i++) {
+                if (deltas[i] != 0) {
+                  if (deltas[i] > 0)
+                    away = true;
+                  break; // stop immediately once we found a value != 0
                 }
-            #endif
+              }
+
+              int tmp = 0;
+              for (int i = (ax + 1) * (bits_per_ax - 1) - 1; i >= ax * (bits_per_ax - 1); i--)
+                tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
+              tmp |= away;
+
+              prun = (prun << bits_per_ax) | tmp;
+            }
             phase1[coord] |= prun << 8;
           }
           coord++;
@@ -255,10 +187,6 @@ namespace prun {
               int m = ffsll(moves) - 1;
 
               int dist1 = dist + 1;
-              #ifdef QT
-                if (m >= move::COUNT1)
-                  dist1++; // half-turns cost 2 in QTM
-              #endif
 
               int corners1 = coord::move_corners[corners][m];
               int udedges21 = coord::move_udedges2[udedges2][m];
@@ -313,10 +241,6 @@ namespace prun {
               int m = ffsll(moves) - 1;
 
               int dist1 = dist + 1;
-              #ifdef QT
-                if (m >= move::COUNT1)
-                  dist1++; // half-turns cost 2 in QTM
-              #endif
 
               int corners1 = coord::move_corners[corners][m];
               int slice21 = coord::slice_to_slice2(coord::move_edges4[slice][m]);

@@ -36,11 +36,10 @@
  * be B (as it is always on the opposite side on a physical cube).
  */
 
-#ifndef __FACE__
-#define __FACE__
-
+#pragma once
 #include <string>
 #include <unordered_map>
+
 #include "cubie.h"
 
 namespace face {
@@ -84,5 +83,3 @@ namespace face {
   void init();
 
 }
-
-#endif

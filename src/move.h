@@ -1,10 +1,4 @@
-/**
- * All kinds of moveset definitions and setup
- */
-
-#ifndef __MOVE__
-#define __MOVE__
-
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -15,31 +9,8 @@ namespace move {
 
   using mask = uint64_t;
 
-  #ifdef QT
-    #ifdef AX
-      const int COUNT = 30;
-      const int COUNT1 = 24;
-      const int split[] = {
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        8, 10, 12, 16, 18, 20
-      }; // split extra half-turns into quarter-turn (for cleaner phase 2 implementation)
-    #else
-      const int COUNT = 16;
-      const int COUNT1 = 12;
-      const int split[] = {
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        4, 6, 8, 10
-      };
-    #endif
-  #else
-    #ifdef AX
-      const int COUNT = 45;
-      const int COUNT1 = 45;
-    #else
-      const int COUNT = 18;
-      const int COUNT1 = 18;
-    #endif
-  #endif
+  const int COUNT = 18;
+  const int COUNT1 = 18;
 
   extern std::string names[COUNT];
   extern cubie::cube cubes[COUNT];
@@ -71,5 +42,3 @@ namespace move {
   void init();
 
 }
-
-#endif
