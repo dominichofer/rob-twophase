@@ -1,5 +1,5 @@
 #include <array>
-#include <bitset>
+#include <bit>
 #include <chrono>
 #include <functional>
 #include <iostream>

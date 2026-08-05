@@ -1,7 +1,7 @@
 #include "coord.h"
 
 #include <algorithm>
-#include <bitset>
+#include <bit>
 #include <cstring>
 #include <functional>
 #include <span>
@@ -42,7 +42,7 @@ namespace coord {
     }
 
     int i = 0;
-    for (int comb = 0; comb < (1 << cubie::edge::COUNT); comb++) {
+    for (uint32_t comb = 0; comb < (1 << cubie::edge::COUNT); comb++) {
       if (std::popcount(comb) == 4) {
         enc_comb[comb] = i;
         dec_comb[i] = comb;
