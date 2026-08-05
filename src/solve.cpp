@@ -1,6 +1,7 @@
 #include "solve.h"
 
 #include <algorithm>
+#include <bit>
 #include <cstring>
 #include <thread>
 

@@ -1,5 +1,6 @@
 #include "prun.h"
 
+#include <bit>
 #include <bitset>
 #include <iostream>
 #include <cstring>

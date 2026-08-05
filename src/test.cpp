@@ -3,7 +3,6 @@
 #include <chrono>
 #include <functional>
 #include <iostream>
-#include <strings.h>
 
 #include "coord.h"
 #include "cubie.h"
