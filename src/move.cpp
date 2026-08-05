@@ -19,12 +19,11 @@ namespace move {
   cubie::cube cubes[COUNT];
   int inv[COUNT];
 
-  mask next[COUNT];
-  mask next_p1p2[COUNT];
-  mask qt_skip[COUNT];
+  uint64_t next[COUNT];
+  uint64_t next_p1p2[COUNT];
 
-  mask p1mask = bit(45) - 1;
-  mask p2mask = 0x10482097fff; // 000010000 010010 000010000 010010 111111111 111111;
+  uint64_t p1_mask = bit(45) - 1;
+  uint64_t p2_mask = 0x10482097fff; // 000010000 010010 000010000 010010 111111111 111111;
 
   // For full set of 45 moves no matter the solving mode
   std::string names1[45];
@@ -32,8 +31,8 @@ namespace move {
   int unmap[COUNT];
 
   // Translate bitmask from full moveset to configured one
-  mask reindex(mask mm) {
-    mask mm1 = 0;
+  uint64_t reindex(uint64_t mm) {
+    uint64_t mm1 = 0;
     for (int m = 0; m < 45; m++) {
       if (map[m] != -1 && in(m, mm)) // drop unmapped moves
         mm1 |= bit(map[m]);
@@ -51,8 +50,7 @@ namespace move {
     cubie::cube cubes1[45];
     int inv1[45];
     // Not initializing the following arrays apparently causes problems on MacOS
-    mask next1[45] = {0};
-    mask qt_skip1[45] = {0};
+    uint64_t next1[45] = {0};
 
     std::string fnames[] = {"U", "D", "R", "L", "F", "B"};
     std::string pnames[] = {"", "2", "'"};
@@ -107,8 +105,8 @@ namespace move {
         else
           cubie::mul(cubes1[m - 1], fcubes[f1], cubes1[m]);
         inv1[m] = i1 + (2 - cnt);
-        next1[m] |= mask(0x7) << i1; // block any moves on same face
-        next1[m] |= mask(0x1ff) << i3; // block all axial moves
+        next1[m] |= uint64_t(0x7) << i1; // block any moves on same face
+        next1[m] |= uint64_t(0x1ff) << i3; // block all axial moves
       }
       for (int cnt = 0; cnt < 3; cnt++) {
         int m = i2 + cnt;
@@ -118,8 +116,8 @@ namespace move {
         else
           cubie::mul(cubes1[m - 1], fcubes[f2], cubes1[m]);
         inv1[m] = i2 + (2 - cnt);
-        next1[m] |= mask(0x3f) << i1; // block all simple moves on both faces
-        next1[m] |= mask(0x1ff) << i3;
+        next1[m] |= uint64_t(0x3f) << i1; // block all simple moves on both faces
+        next1[m] |= uint64_t(0x1ff) << i3;
       }
       for (int cnt1 = 0; cnt1 < 3; cnt1++) {
         for (int cnt2 = 0; cnt2 < 3; cnt2++) {
@@ -127,15 +125,9 @@ namespace move {
           names1[m] = "(" + names1[i1 + cnt1] + " " + names1[i2 + cnt2] + ")";
           cubie::mul(cubes1[i1 + cnt1], cubes1[i2 + cnt2], cubes1[m]);
           inv1[m] = i3 + 3 * (2 - cnt1) + (2 - cnt2);
-          next1[m] |= mask(0x7fff) << 15 * ax; // block all simple and axial moves
+          next1[m] |= uint64_t(0x7fff) << 15 * ax; // block all simple and axial moves
         }
       }
-
-      qt_skip1[i1] |= bit(i1);
-      qt_skip1[i1] |= bit(i3);
-      qt_skip1[i2] |= bit(i2);
-      qt_skip1[i2] |= bit(i3);
-      qt_skip1[i3] |= bit(i3);
     }
     // Half-slice moves commute
     next1[25] |= bit(10);
@@ -153,11 +145,10 @@ namespace move {
       cubes[i] = cubes1[m];
       inv[i] = map[inv1[m]];
       next[i] = reindex(next1[m]);
-      qt_skip[i] = reindex(qt_skip1[m]);
     }
 
-    p1mask = reindex(p1mask);
-    p2mask = reindex(p2mask);
+    p1_mask = reindex(p1_mask);
+    p2_mask = reindex(p2_mask);
 
     for (int m = 0; m < COUNT; m++) {
       next_p1p2[m] = next[m]; // we can do normal blocking for phase 2 moves
@@ -227,41 +218,4 @@ namespace move {
     };
     return len(mseq, cost);
   }
-
-  int len_axht(const std::vector<int>& mseq) {
-    int cost[] = {
-      1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1
-    };
-    return len(mseq, cost);
-  }
-
-  int len_qt(const std::vector<int>& mseq) {
-    int cost[] = {
-      1, 2, 1, 1, 2, 1,
-      2, 3, 2, 3, 4, 3, 2, 3, 2,
-      1, 2, 1, 1, 2, 1,
-      2, 3, 2, 3, 4, 3, 2, 3, 2,
-      1, 2, 1, 1, 2, 1,
-      2, 3, 2, 3, 4, 3, 2, 3, 2
-    };
-    return len(mseq, cost);
-  }
-
-  int len_axqt(const std::vector<int>& mseq) {
-    int cost[] = {
-      1, 2, 1, 1, 2, 1,
-      1, 2, 1, 2, 2, 2, 1, 2, 1,
-      1, 2, 1, 1, 2, 1,
-      1, 2, 1, 2, 2, 2, 1, 2, 1,
-      1, 2, 1, 1, 2, 1,
-      1, 2, 1, 2, 2, 2, 1, 2, 1
-    };
-    return len(mseq, cost);
-  }
-
 }

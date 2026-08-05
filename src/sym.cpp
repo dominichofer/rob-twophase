@@ -13,13 +13,13 @@ namespace sym {
 
   int conj_move[move::COUNT][COUNT];
   uint16_t conj_twist[coord::N_TWIST][COUNT_SUB];
-  uint16_t conj_udedges2[coord::N_UDEDGES2][COUNT_SUB];
+  uint16_t conj_ud_edges2[coord::N_UD_EDGES2][COUNT_SUB];
 
-  uint32_t fslice1_sym[coord::N_FSLICE1];
+  uint32_t fslice1_sym[coord::N_FLIP_SLICE1];
   uint32_t corners_sym[coord::N_CORNERS];
-  uint32_t fslice1_raw[N_FSLICE1];
+  uint32_t fslice1_raw[N_FLIP_SLICE1];
   uint16_t corners_raw[N_CORNERS];
-  uint16_t fslice1_selfs[N_FSLICE1];
+  uint16_t fslice1_selfs[N_FLIP_SLICE1];
   uint16_t corners_selfs[N_CORNERS];
 
   void init_base() {
@@ -95,7 +95,7 @@ namespace sym {
     }
 
     /* Figure this out right here instead of defining even more "weird" constants */
-    int per_axis = move::COUNT1 / 3;
+    int per_axis = move::COUNT / 3;
     int per_face = 3;
     for (int s = 0; s < COUNT; s++) {
       for (int ax = 0; ax < 3; ax++) {
@@ -129,7 +129,7 @@ namespace sym {
   }
 
   void init_fslice1() {
-    std::fill(fslice1_sym, fslice1_sym + coord::N_FSLICE1, EMPTY);
+    std::fill(fslice1_sym, fslice1_sym + coord::N_FLIP_SLICE1, EMPTY);
 
     cubie::cube c1 = cubie::SOLVED_CUBE;
     cubie::cube c2;
@@ -195,7 +195,7 @@ namespace sym {
   void init() {
     init_base();
     init_conjcoord(conj_twist, coord::N_TWIST, coord::get_twist, coord::set_twist, cubie::corner::mul);
-    init_conjcoord(conj_udedges2, coord::N_UDEDGES2, coord::get_udedges2, coord::set_udedges2, cubie::edge::mul);
+    init_conjcoord(conj_ud_edges2, coord::N_UD_EDGES2, coord::get_ud_edges2, coord::set_ud_edges2, cubie::edge::mul);
     init_fslice1();
     init_corners();
   }

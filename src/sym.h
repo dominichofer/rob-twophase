@@ -8,7 +8,7 @@ namespace sym {
   const int COUNT = 48;
 
   const int COUNT_SUB = 16;
-  const int N_FSLICE1 = 64430;
+  const int N_FLIP_SLICE1 = 64430;
   const int N_CORNERS = 2768;
   const int ROT = 16; // 120 degree rotation around axis through URF and DLB corner
 
@@ -18,13 +18,13 @@ namespace sym {
 
   extern int conj_move[move::COUNT][COUNT];
   extern uint16_t conj_twist[coord::N_TWIST][COUNT_SUB];
-  extern uint16_t conj_udedges2[coord::N_UDEDGES2][COUNT_SUB];
+  extern uint16_t conj_ud_edges2[coord::N_UD_EDGES2][COUNT_SUB];
 
-  extern uint32_t fslice1_sym[coord::N_FSLICE1];
+  extern uint32_t fslice1_sym[coord::N_FLIP_SLICE1];
   extern uint32_t corners_sym[coord::N_CORNERS];
-  extern uint32_t fslice1_raw[N_FSLICE1];
+  extern uint32_t fslice1_raw[N_FLIP_SLICE1];
   extern uint16_t corners_raw[N_CORNERS];
-  extern uint16_t fslice1_selfs[N_FSLICE1];
+  extern uint16_t fslice1_selfs[N_FLIP_SLICE1];
   extern uint16_t corners_selfs[N_CORNERS];
 
   inline bool eff_inv(int eff) { return eff & 1; }

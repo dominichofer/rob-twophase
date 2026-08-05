@@ -34,7 +34,7 @@ namespace cubie {
     const int DF = 5;
     const int DL = 6;
     const int DB = 7;
-    // SLICE-edges last s.t. UDEDGES2 is easier to handle
+    // SLICE-edges last s.t. Ud_edges2 is easier to handle
     const int FR = 8;
     const int FL = 9;
     const int BL = 10;
@@ -47,10 +47,13 @@ namespace cubie {
   using namespace edge;
 
   struct cube {
-    int cperm[corner::COUNT]; // corner cubie permutation
-    int eperm[edge::COUNT]; // edge cubie permutation
-    int cori[corner::COUNT]; // corner cubie orientation; 0 if U/D-facelet on U/D-face; 1 clockwise rot; 2 c-clock
-    int eori[edge::COUNT]; // edge cubie orientation; 0 if U/D-facelet on U/D-face or same for F/B for slice edges
+    std::array<int, corner::COUNT> c_prm; // corner cubie permutation
+    std::array<int, edge::COUNT>   e_prm; // edge cubie permutation
+    std::array<int, corner::COUNT> c_ori; // corner cubie orientation; 0 if U/D-facelet on U/D-face; 1 clockwise rot; 2 c-clock
+    std::array<int, edge::COUNT>   e_ori; // edge cubie orientation; 0 if U/D-facelet on U/D-face or same for F/B for slice edges
+
+    bool operator==(const cube&) const = default;
+    bool operator!=(const cube&) const = default;
   };
 
   const cube SOLVED_CUBE = {
@@ -72,8 +75,4 @@ namespace cubie {
   void inv(const cube& c, cube& into); // compute the inverse cube
   void shuffle(cube& c); // generate a uniformly random cube
   int check(const cube& c); // check a cube for being solvable
-
-  bool operator==(const cube& c1, const cube& c2);
-  bool operator!=(const cube& c1, const cube& c2);
-
 }

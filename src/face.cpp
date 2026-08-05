@@ -48,8 +48,8 @@ namespace face {
       auto tmp = corners.find(encode(std::string(cornlet, 3), 0));
       if (tmp == corners.end())
         return 3; // invalid corner cubie
-      c.cperm[corner] = tmp->second.first;
-      c.cori[corner] = tmp->second.second;
+      c.c_prm[corner] = tmp->second.first;
+      c.c_ori[corner] = tmp->second.second;
     }
 
     for (int edge = 0; edge < cubie::edge::COUNT; edge++) {
@@ -59,8 +59,8 @@ namespace face {
       auto tmp = edges.find(encode(std::string(edgelet, 2), 0));
       if (tmp == edges.end())
         return 4; // invalid edge cubie
-      c.eperm[edge] = tmp->second.first;
-      c.eori[edge] = tmp->second.second;
+      c.e_prm[edge] = tmp->second.first;
+      c.e_ori[edge] = tmp->second.second;
     }
 
     return 0;
@@ -75,11 +75,11 @@ namespace face {
     for (int corner = 0; corner < cubie::corner::COUNT; corner++) {
       for (int i = 0; i < 3; i++)
         // Corner twist is defined clockwise
-        s[CORNLETS[corner][i]] = cubie::corner::NAMES[c.cperm[corner]][mod(i - c.cori[corner], 3)];
+        s[CORNLETS[corner][i]] = cubie::corner::NAMES[c.c_prm[corner]][mod(i - c.c_ori[corner], 3)];
     }
     for (int edge = 0; edge < cubie::edge::COUNT; edge++) {
       for (int i = 0; i < 2; i++)
-        s[EDGELETS[edge][i]] = cubie::edge::NAMES[c.eperm[edge]][mod(i - c.eori[edge], 2)];
+        s[EDGELETS[edge][i]] = cubie::edge::NAMES[c.e_prm[edge]][mod(i - c.e_ori[edge], 2)];
     }
 
     return std::string(s, N_FACELETS);

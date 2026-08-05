@@ -189,12 +189,7 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl;
         std::cout << "Failed: " << failed << std::endl;
         std::cout << "Avg. Time: " << std::accumulate(times.begin(), times.end(), 0.) / times.size() << " ms" << std::endl;
-        std::cout << "Avg. Moves: "
-          << mean(sols, move::len_ht) << " (HT), "
-          << mean(sols, move::len_qt) << " (QT), "
-          << mean(sols, move::len_axht) << " (AXHT), "
-          << mean(sols, move::len_axqt) << " (AXQT)"
-        << std::endl;
+        std::cout << "Avg. Moves: " << mean(sols, move::len_ht) << std::endl;
 
         int freq[100];
         int min = 100;

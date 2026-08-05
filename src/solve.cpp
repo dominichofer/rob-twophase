@@ -9,73 +9,69 @@
 
 namespace solve {
 
-  class Search {
-
+  class Search
+  {
     int dir; // ID of search direction
     const coordc& cube; // starting position
-    int p1depth; // phase 1 search depth
-    move::mask d0moves; // mask for initial moves to consider
+    int p1_depth; // phase 1 search depth
+    uint64_t d0_moves; // mask for initial moves to consider
     bool& done; // when to terminate the search
-    int& lenlim; // only find strictly shorter solutions
+    int& len_limit; // only find strictly shorter solutions
     Engine& solver; // report solutions to
 
     /* Keep track of reconstructed edges that remain valid in the current search path */
-    int uedges[50];
-    int dedges[50];
+    int u_edges[50];
+    int d_edges[50];
     int edges_depth;
 
     int moves[50]; // current (partial) solution
 
   private:
-    void phase1(
-      int depth, int togo, int flip, int slice, int twist, int corners, move::mask next, move::mask qt_skip
-    ); // phase 1 search; iterates through all solution with exactly `togo` moves
-    bool phase2(
-      int depth, int togo, int slice, int udedges2, int corners, move::mask next, move::mask qt_skip
-    ); // phase 2 search; returns once any solution is found
+    // phase 1 search; iterates through all solution with exactly `togo` moves
+    void phase1(int depth, int togo, int flip, int slice, int twist, int corners, uint64_t next);
+
+    // phase 2 search; returns once any solution is found
+    bool phase2(int depth, int togo, int slice, int ud_edges2, int corners, uint64_t next);
 
   public:
-    Search(
-      int dir,
-      const coordc& cube,
-      int p1depth, move::mask d0moves,
-      bool& done, int& lenlim, Engine& solver
-    ) : dir(dir), cube(cube), p1depth(p1depth), d0moves(d0moves), done(done), lenlim(lenlim), solver(solver) {};
-    void run(); // perform the search
+    Search(int dir, const coordc& cube, int p1_depth, uint64_t d0_moves, bool& done, int& len_limit, Engine& solver)
+      : dir(dir), cube(cube), p1_depth(p1_depth), d0_moves(d0_moves), done(done), len_limit(len_limit), solver(solver)
+    {};
 
+    void run();
   };
 
   void Search::run() {
-    uedges[0] = cube.uedges;
-    dedges[0] = cube.dedges;
+    u_edges[0] = cube.u_edges;
+    d_edges[0] = cube.d_edges;
     edges_depth = 0;
 
-    move::mask next;
-    prun::get_phase1(cube.flip, cube.slice, cube.twist, p1depth, next);
-    next &= move::p1mask & d0moves; // block B-moves in F5 mode here and select current search split
-    phase1(0, p1depth, cube.flip, cube.slice, cube.twist, cube.corners, next, 0);
+    uint64_t next;
+    prun::get_phase1(cube.flip, cube.slice, cube.twist, p1_depth, next);
+    next &= move::p1_mask & d0_moves; // block B-moves in F5 mode here and select current search split
+    phase1(0, p1_depth, cube.flip, cube.slice, cube.twist, cube.corners, next, 0);
   }
 
-  void Search::phase1(
-    int depth, int togo, int flip, int slice, int twist, int corners, move::mask next, move::mask qt_skip
-  ) {
+  void Search::phase1(int depth, int togo, int flip, int slice, int twist, int corners, uint64_t next)
+  {
     if (done)
       return;
+
     if (togo == 0) {
       int tmp = prun::get_precheck(corners, slice);
-      if (tmp >= lenlim - depth) // phase 2 precheck, only reconstruct edges if successful
+      if (tmp >= len_limit - depth) // phase 2 precheck, only reconstruct edges if successful
         return;
 
       for (int i = edges_depth + 1; i <= depth; i++) {
-        uedges[i] = coord::move_edges4[uedges[i - 1]][moves[i - 1]];
-        dedges[i] = coord::move_edges4[dedges[i - 1]][moves[i - 1]];
+        u_edges[i] = coord::move_edges4[u_edges[i - 1]][moves[i - 1]];
+        d_edges[i] = coord::move_edges4[d_edges[i - 1]][moves[i - 1]];
       }
       edges_depth = depth - 1;
-      int udedges2 = coord::merge_udedges2(uedges[depth], dedges[depth]);
+      int ud_edges2 = coord::merge_ud_edges2(u_edges[depth], d_edges[depth]);
 
       int delta = 1;
-      for (int togo1 = std::max(prun::get_phase2(corners, udedges2), tmp); togo1 < lenlim - depth; togo1 += delta) {
-        if (phase2(depth, togo1, slice, udedges2, corners, move::p2mask & move::next_p1p2[moves[depth - 1]], qt_skip))
+      for (int togo1 = std::max(prun::get_phase2(corners, ud_edges2), tmp); togo1 < len_limit - depth; togo1 += delta) {
+        if (phase2(depth, togo1, slice, ud_edges2, corners, move::p2_mask & move::next_p1p2[moves[depth - 1]]))
           return; // once we have found a phase 2 solution, there cannot be any shorter ones -> quit
       }
       return;
@@ -84,13 +80,13 @@ namespace solve {
     depth++;
     togo--;
     while (next) {
-      int m = ffsll(next) -  1; // get rightmost move index (`ffsll()` uses 1-based indexing)
+      int m = std::countr_zero(next);
       next &= next - 1;
 
       int flip1 = coord::move_flip[flip][m];
       int slice1 = coord::move_edges4[slice][m];
       int twist1 = coord::move_twist[twist][m];
-      move::mask next1;
+      uint64_t next1;
       int dist1 = prun::get_phase1(flip1, slice1, twist1, togo, next1);
 
       // Check inside loop to avoid unnecessary recursion unwinds
@@ -98,9 +94,8 @@ namespace solve {
         int corners1 = coord::move_corners[corners][m];
         moves[depth - 1] = m;
 
-        next1 &= move::p1mask & move::next[m];
-        move::mask qt_skip1;
-        phase1(depth, togo, flip1, slice1, twist1, corners1, next1, qt_skip1);
+        next1 &= move::p1_mask & move::next[m];
+        phase1(depth, togo, flip1, slice1, twist1, corners1, next1);
       }
     }
 
@@ -111,9 +106,8 @@ namespace solve {
       edges_depth--;
   }
 
-  bool Search::phase2(
-    int depth, int togo, int slice, int udedges2, int corners, move::mask next, move::mask qt_skip
-  ) {
+  bool Search::phase2(int depth, int togo, int slice, int ud_edges2, int corners, uint64_t next)
+  {
     if (togo == 0) {
       if (slice != coord::N_SLICE2 * coord::SLICE1_SOLVED) // check if SLICE2 is also solved
         return false;
@@ -127,16 +121,16 @@ namespace solve {
     }
 
     while (next) {
-      int m = ffsll(next) -  1; // get rightmost move index (`ffsll()` uses 1-based indexing)
+      int m = std::countr_zero(next);
       next &= next - 1;
 
       int slice1 = coord::move_edges4[slice][m];
-      int udedges21 = coord::move_udedges2[udedges2][m];
+      int ud_edges21 = coord::move_ud_edges2[ud_edges2][m];
       int corners1 = coord::move_corners[corners][m];
 
-      if (prun::get_phase2(corners1, udedges21) < togo) {
+      if (prun::get_phase2(corners1, ud_edges21) < togo) {
         moves[depth] = m;
-        if (phase2(depth + 1, togo - 1, slice1, udedges21, corners1, move::p2mask & move::next[m], 0))
+        if (phase2(depth + 1, togo - 1, slice1, ud_edges21, corners1, move::p2_mask & move::next[m], 0))
           return true; // return as soon as we have a solution
       }
     }
@@ -144,13 +138,12 @@ namespace solve {
     return false;
   }
 
-  Engine::Engine(
-    int n_threads, int tlim,
-    int n_sols, int max_len, int n_splits
-  ) : n_threads(n_threads), tlim(tlim), n_sols(n_sols), max_len(max_len), n_splits(n_splits) {
-    int tmp = (move::COUNT1 + n_splits - 1) / n_splits; // ceil to make sure that we always include all moves
+  Engine::Engine(int n_threads, int tlim, int n_sols, int max_len, int n_splits)
+    : n_threads(n_threads), tlim(tlim), n_sols(n_sols), max_len(max_len), n_splits(n_splits)
+  {
+    int tmp = (move::COUNT + n_splits - 1) / n_splits; // ceil to make sure that we always include all moves
     for (int i = 0; i < n_splits; i++)
-      masks[i] = (move::mask(1) << tmp) - 1 << tmp * i;
+      masks[i] = (uint64_t(1) << tmp) - 1 << tmp * i;
     done = true; // make sure that the first `prepare()` will actually do something
   }
 
@@ -171,7 +164,7 @@ namespace solve {
       }
       job_mtx.unlock();
 
-      Search search(mindir, dirs[mindir], togo, masks[split], done, lenlim, *this);
+      Search search(mindir, dirs[mindir], togo, masks[split], done, len_limit, *this);
       search.run();
     } while (!done); // we should never actually get to the truly optimal depth anyways in general
   }
@@ -186,7 +179,7 @@ namespace solve {
       threads.push_back(std::thread([&]() { this->thread(); }));
 
     done = false;
-    lenlim = max_len > 0 ? max_len + 1: 50; // only search for strictly shorter solutions than this
+    len_limit = max_len > 0 ? max_len + 1: 50; // only search for strictly shorter solutions than this
     // `sols` is always emptied after a solve
   }
 
@@ -206,11 +199,11 @@ namespace solve {
       dirs[dir].flip = coord::get_flip(tmp2);
       dirs[dir].slice = coord::get_slice(tmp2);
       dirs[dir].twist = coord::get_twist(tmp2);
-      dirs[dir].uedges = coord::get_uedges(tmp2);
-      dirs[dir].dedges = coord::get_dedges(tmp2);
+      dirs[dir].u_edges = coord::get_u_edges(tmp2);
+      dirs[dir].d_edges = coord::get_d_edges(tmp2);
       dirs[dir].corners = coord::get_corners(tmp2);
 
-      move::mask tmp; // simply ignore, makes no sense anyways without proper `togo`
+      uint64_t tmp; // simply ignore, makes no sense anyways without proper `togo`
       depths[dir] = prun::get_phase1(dirs[dir].flip, dirs[dir].slice, dirs[dir].twist, 100, tmp);
       splits[dir] = 0;
     }
@@ -254,9 +247,9 @@ namespace solve {
     if (sols.size() > n_sols)
       sols.pop();
     if (sols.size() == n_sols) {
-      lenlim = sols.top().first.size(); // only search for strictly shorter solutions
+      len_limit = sols.top().first.size(); // only search for strictly shorter solutions
 
-      if (lenlim <= max_len) { // already found a solution that is short enough
+      if (len_limit <= max_len) { // already found a solution that is short enough
         done = true; // end searching
         // Wake up timeout
         std::lock_guard<std::mutex> lock(tout_mtx);

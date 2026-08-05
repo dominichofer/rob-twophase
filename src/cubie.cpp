@@ -8,7 +8,7 @@
 namespace cubie {
 
   /* Faster than tricky if-else sequences for handling mirrored states */
-  int mul_coris[][6] = {
+  int mul_c_oris[][6] = {
     {0, 1, 2, 3, 4, 5},
     {1, 2, 0, 4, 5, 3},
     {2, 0, 1, 5, 3, 4},
@@ -16,7 +16,7 @@ namespace cubie {
     {4, 3, 5, 1, 0, 2},
     {5, 4, 3, 2, 1, 0}
   };
-  int inv_cori[] = {
+  int inv_c_ori[] = {
     0, 2, 1, 3, 4, 5
   };
 
@@ -25,15 +25,15 @@ namespace cubie {
 
   void corner::mul(const cubie::cube& c1, const cubie::cube& c2, cubie::cube& into) {
     for (int i = 0; i < corner::COUNT; i++) {
-      into.cperm[i] = c1.cperm[c2.cperm[i]];
-      into.cori[i] = mul_coris[c1.cori[c2.cperm[i]]][c2.cori[i]];
+      into.c_prm[i] = c1.c_prm[c2.c_prm[i]];
+      into.c_ori[i] = mul_c_oris[c1.c_ori[c2.c_prm[i]]][c2.c_ori[i]];
     }
   }
 
   void edge::mul(const cubie::cube& c1, const cubie::cube& c2, cubie::cube& into) {
     for (int i = 0; i < edge::COUNT; i++) {
-      into.eperm[i] = c1.eperm[c2.eperm[i]];
-      into.eori[i] = (c1.eori[c2.eperm[i]] + c2.eori[i]) & 1;
+      into.e_prm[i] = c1.e_prm[c2.e_prm[i]];
+      into.e_ori[i] = (c1.e_ori[c2.e_prm[i]] + c2.e_ori[i]) & 1;
     }
   }
 
@@ -56,84 +56,86 @@ namespace cubie {
 
   void inv(const cube& c, cube& into) {
     for (int corner = 0; corner < corner::COUNT; corner++)
-      into.cperm[c.cperm[corner]] = corner; // inv[a[i]] = i
+      into.c_prm[c.c_prm[corner]] = corner; // inv[a[i]] = i
     for (int edge = 0; edge < edge::COUNT; edge++)
-      into.eperm[c.eperm[edge]] = edge;
+      into.e_prm[c.e_prm[edge]] = edge;
     for (int i = 0; i < corner::COUNT; i++)
-      into.cori[i] = inv_cori[c.cori[into.cperm[i]]];
+      into.c_ori[i] = inv_c_ori[c.c_ori[into.c_prm[i]]];
     for (int i = 0; i < edge::COUNT; i++)
-      into.eori[i] = c.eori[into.eperm[i]];
+      into.e_ori[i] = c.e_ori[into.e_prm[i]];
   }
 
-  int check(const cube& c) {
-    bool corners[corner::COUNT] = {};
-    int cori_sum = 0;
+  template <std::size_t N>
+  bool is_permutation(std::array<int, N> prm)
+  {
+      std::sort(prm.begin(), prm.end());
 
-    for (int i = 0; i < corner::COUNT; i++) {
-      if (c.cperm[i] < 0 || c.cperm[i] >= corner::COUNT)
-        return 1; // invalid corner cubie
-      corners[c.cperm[i]] = true;
-      if (c.cori[i] < 0 || c.cori[i] >= 3)
-        return 2; // invalid corner orientation
-      cori_sum += c.cori[i];
-    }
-    if (cori_sum % 3 != 0)
-      return 3; // invalid twist parity
-    for (bool corner : corners) {
-      if (!corner)
-        return 4; // missing corner
-    }
+      for (std::size_t i = 0; i < N; ++i) {
+          if (prm[i] != static_cast<int>(i))
+              return false;
+      }
 
-    bool edges[edge::COUNT] = {};
-    int eori_sum = 0;
+      return true;
+  }
 
-    for (int i = 0; i < edge::COUNT; i++) {
-      if (c.eperm[i] < 0 || c.eperm[i] >= edge::COUNT)
-        return 5; // invalid edge cubie
-      edges[c.eperm[i]] = true;
-      if (c.eori[i] < 0 || c.eori[i] >= 2)
-        return 6; // invalid edge orientation
-      eori_sum += c.eori[i];
-    }
-    if ((eori_sum & 1) != 0)
-      return 7; // invalid flip parity
-    for (bool edge : edges) {
-      if (!edge)
-        return 8; // missing edge
-    }
+  template <std::size_t N>
+  bool is_permutation(std::array<int, N> prm)
+  {
+      std::sort(prm.begin(), prm.end());
 
-    if (parity(c.cperm, corner::COUNT) != parity(c.eperm, edge::COUNT))
-      return 9; // corner and edge permutation parity mismatch
-    return 0;
+      for (std::size_t i = 0; i < N; ++i)
+          if (prm[i] != static_cast<int>(i))
+              return false;
+
+      return true;
+  }
+
+  template <std::size_t N>
+  bool valid_orientation(const std::array<int, N>& ori, int count)
+  {
+      int sum = 0;
+
+      for (int o : ori) {
+          if (o < 0 || o >= count)
+              return false;
+          sum += o;
+      }
+
+      return sum % count == 0;
+  }
+
+  int check(const cube& c)
+  {
+      if (!is_permutation(c.c_prm))
+          return 1; // invalid corner permutation
+
+      if (!valid_orientation(c.c_ori, 3))
+          return 2; // invalid corner orientation
+
+      if (!is_permutation(c.e_prm))
+          return 3; // invalid edge permutation
+
+      if (!valid_orientation(c.e_ori, 2))
+          return 4; // invalid edge orientation
+
+      if (parity(c.c_prm) != parity(c.e_prm))
+          return 5; // corner and edge permutation parity mismatch
+
+      return 0;
   }
 
   void shuffle(cube& c) {
     for (int i = 0; i < corner::COUNT; i++)
-      c.cperm[i] = i;
+      c.c_prm[i] = i;
     for (int i = 0; i < edge::COUNT; i++)
-      c.eperm[i] = i;
+      c.e_prm[i] = i;
 
     coord::set_corners(c, std::uniform_int_distribution<int>(0, coord::N_CORNERS)(gen));
-    std::shuffle(c.eperm, c.eperm + edge::COUNT, gen); // no coordinate for all edges
-    if (parity(c.cperm, corner::COUNT) != parity(c.eperm, edge::COUNT))
-      std::swap(c.cperm[corner::COUNT - 2], c.cperm[corner::COUNT - 1]); // flip parity
+    std::shuffle(c.e_prm, c.e_prm + edge::COUNT, gen); // no coordinate for all edges
+    if (parity(c.c_prm, corner::COUNT) != parity(c.e_prm, edge::COUNT))
+      std::swap(c.c_prm[corner::COUNT - 2], c.c_prm[corner::COUNT - 1]); // flip parity
 
     coord::set_twist(c, std::uniform_int_distribution<int>(0, coord::N_TWIST - 1)(gen));
     coord::set_flip(c, std::uniform_int_distribution<int>(0, coord::N_FLIP - 1)(gen));
   }
-
-  // We could maybe make this faster, but it is not performance critical anyways
-  bool operator==(const cube& c1, const cube& c2) {
-    return
-      std::equal(c1.cperm, c1.cperm + corner::COUNT, c2.cperm) &&
-      std::equal(c1.eperm, c1.eperm + edge::COUNT, c2.eperm) &&
-      std::equal(c1.cori, c1.cori + corner::COUNT, c2.cori) &&
-      std::equal(c1.eori, c1.eori + edge::COUNT, c2.eori)
-    ;
-  }
-
-  bool operator!=(const cube& c1, const cube& c2) {
-    return !(c1 == c2);
-  }
-
 }

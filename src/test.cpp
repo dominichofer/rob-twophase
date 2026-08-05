@@ -36,7 +36,7 @@ void test_cubie() {
       error();
   }
   cubie::shuffle(c);
-  std::swap(c.cperm[0], c.cperm[1]);
+  std::swap(c.c_prm[0], c.c_prm[1]);
   if (check(c) == 0)
     error();
 
@@ -53,10 +53,10 @@ void test_getset(int (*get_coord)(const cubie::cube&), void (*set_coord)(cubie::
   ok();
 }
 
-void test_movecoord(uint16_t move_coord[][move::COUNT], int n_coord, move::mask moves = move::p1mask | move::p2mask) {
+void test_movecoord(uint16_t move_coord[][move::COUNT], int n_coord, uint64_t moves = move::p1_mask | move::p2_mask) {
   for (int coord = 0; coord < n_coord; coord++) {
     for (; moves; moves &= moves - 1) {
-      int m = ffsll(moves) - 1;
+      int m = std::countr_zero(moves);
       if (move_coord[move_coord[coord][m]][move::inv[m]] != coord)
         error();
       if (move_coord[move_coord[coord][move::inv[m]]][m] != coord)
@@ -71,18 +71,18 @@ void test_coord() {
   test_getset(coord::get_flip, coord::set_flip, coord::N_FLIP);
   test_getset(coord::get_twist, coord::set_twist, coord::N_TWIST);
   test_getset(coord::get_slice, coord::set_slice, coord::N_SLICE);
-  test_getset(coord::get_uedges, coord::set_uedges, coord::N_UEDGES);
-  test_getset(coord::get_dedges, coord::set_dedges, coord::N_DEDGES);
+  test_getset(coord::get_u_edges, coord::set_u_edges, coord::N_U_EDGES);
+  test_getset(coord::get_d_edges, coord::set_d_edges, coord::N_D_EDGES);
   test_getset(coord::get_corners, coord::set_corners, coord::N_CORNERS);
 
   test_getset(coord::get_slice1, coord::set_slice1, coord::N_SLICE1);
-  test_getset(coord::get_udedges2, coord::set_udedges2, coord::N_UDEDGES2);
+  test_getset(coord::get_ud_edges2, coord::set_ud_edges2, coord::N_UD_EDGES2);
 
   test_movecoord(coord::move_flip, coord::N_FLIP);
   test_movecoord(coord::move_twist, coord::N_TWIST);
   test_movecoord(coord::move_edges4, coord::N_SLICE);
   test_movecoord(coord::move_corners, coord::N_CORNERS);
-  test_movecoord(coord::move_udedges2, coord::N_UDEDGES2, move::p2mask);
+  test_movecoord(coord::move_ud_edges2, coord::N_UD_EDGES2, move::p2_mask);
 }
 
 void test_move() {
@@ -103,13 +103,13 @@ void test_move() {
 
   std::cout << "Phase 1: ";
   for (int m = 0; m < move::COUNT; m++) {
-    if (move::in(m, move::p1mask))
+    if (move::in(m, move::p1_mask))
       std::cout << move::names[m] << " ";
   }
   std::cout << std::endl;
   std::cout << "Phase 2: ";
   for (int m = 0; m < move::COUNT; m++) {
-    if (move::in(m, move::p2mask))
+    if (move::in(m, move::p2_mask))
       std::cout << move::names[m] << " ";
   }
   std::cout << std::endl;
@@ -120,13 +120,6 @@ void test_move() {
     for (int m1 = 0; m1 < move::COUNT; m1++) {
       if (!move::in(m1, move::next[m]))
         std::cout << move::names[m1] << " ";
-    }
-    if (move::qt_skip[m] != 0) {
-      std::cout << "| ";
-      for (int m1 = 0; m1 < move::COUNT; m1++) {
-        if (move::in(m1, move::qt_skip[m]))
-          std::cout << move::names[m1] << " ";
-      }
     }
     std::cout << std::endl;
   }
@@ -148,27 +141,27 @@ void test_conj(uint16_t conj_coord[][sym::COUNT_SUB], int n_coord) {
 void test_sym() {
   std::cout << "Testing sym level ..." << std::endl;
   test_conj(sym::conj_twist, coord::N_TWIST);
-  test_conj(sym::conj_udedges2, coord::N_UDEDGES2);
+  test_conj(sym::conj_ud_edges2, coord::N_UD_EDGES2);
 }
 
 void test_prun() {
   std::cout << "Testing pruning ..." << std::endl;
 
   srand(0);
-  int n_moves = std::bitset<64>(move::p1mask).count(); // make sure not to consider B-moves in F5-mode
+  int n_moves = std::bitset<64>(move::p1_mask).count(); // make sure not to consider B-moves in F5-mode
 
   for (int i = 0; i < 1000; i++) {
     int flip = rand() % coord::N_FLIP;
     int slice = rand() % coord::N_SLICE;
     int twist = rand() % coord::N_TWIST;
 
-    move::mask next;
-    move::mask next1;
-    move::mask tmp;
+    uint64_t next;
+    uint64_t next1;
+    uint64_t tmp;
     int togo = prun::get_phase1(flip, slice, twist, 100, tmp);
 
     int dist = prun::get_phase1(flip, slice, twist, togo, next);
-    next &= move::p1mask;
+    next &= move::p1_mask;
 
     next1 = 0;
     for (int m = 0; m < n_moves; m++) {
@@ -182,7 +175,7 @@ void test_prun() {
       error();
 
     dist = prun::get_phase1(flip, slice, twist, togo + 1, next);
-    next &= move::p1mask;
+    next &= move::p1_mask;
 
     next1 = 0;
     for (int m = 0; m < n_moves; m++) {

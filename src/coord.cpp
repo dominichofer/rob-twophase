@@ -15,7 +15,7 @@ namespace coord {
   uint16_t move_twist[N_TWIST][move::COUNT];
   uint16_t move_edges4[N_SLICE][move::COUNT];
   uint16_t move_corners[N_CORNERS][move::COUNT];
-  uint16_t move_udedges2[N_UDEDGES2][move::COUNT];
+  uint16_t move_ud_edges2[N_UD_EDGES2][move::COUNT];
 
   /* Used for en-/decoding pos-perm coords */
   uint8_t enc_perm[1 << (4 * 2)]; // encode 4-elem perm as 8 bits
@@ -138,51 +138,51 @@ namespace coord {
   }
 
   int get_twist(const cubie::cube& c) {
-    return get_ori(c.cori, cubie::corner::COUNT, 3);
+    return get_ori(c.c_ori, cubie::corner::COUNT, 3);
   }
 
   void set_twist(cubie::cube& c, int twist) {
-    set_ori(twist, c.cori, cubie::corner::COUNT, 3);
+    set_ori(twist, c.c_ori, cubie::corner::COUNT, 3);
   }
 
   int get_flip(const cubie::cube& c) {
-    return get_ori(c.eori, cubie::edge::COUNT, 2);
+    return get_ori(c.e_ori, cubie::edge::COUNT, 2);
   }
 
   void set_flip(cubie::cube& c, int flip) {
-    set_ori(flip, c.eori, cubie::edge::COUNT, 2);
+    set_ori(flip, c.e_ori, cubie::edge::COUNT, 2);
   }
 
   int get_slice(const cubie::cube& c) {
-    return get_combperm(c.eperm, cubie::edge::COUNT, 0xf00);
+    return get_combperm(c.e_prm, cubie::edge::COUNT, 0xf00);
   }
 
   void set_slice(cubie::cube& c, int slice) {
-    set_combperm(slice / N_PERM4, slice % N_PERM4, c.eperm, cubie::edge::COUNT, cubie::edge::FR);
+    set_combperm(slice / N_PERM4, slice % N_PERM4, c.e_prm, cubie::edge::COUNT, cubie::edge::FR);
   }
 
-  int get_uedges(const cubie::cube& c) {
-    return get_combperm(c.eperm, cubie::edge::COUNT, 0x00f);
+  int get_u_edges(const cubie::cube& c) {
+    return get_combperm(c.e_prm, cubie::edge::COUNT, 0x00f);
   }
 
-  void set_uedges(cubie::cube& c, int uedges) {
-    set_combperm(uedges / N_PERM4, uedges % N_PERM4, c.eperm, cubie::edge::COUNT, cubie::edge::UR);
+  void set_u_edges(cubie::cube& c, int u_edges) {
+    set_combperm(u_edges / N_PERM4, u_edges % N_PERM4, c.e_prm, cubie::edge::COUNT, cubie::edge::UR);
   }
 
-  int get_dedges(const cubie::cube& c) {
-    return get_combperm(c.eperm, cubie::edge::COUNT, 0x0f0);
+  int get_d_edges(const cubie::cube& c) {
+    return get_combperm(c.e_prm, cubie::edge::COUNT, 0x0f0);
   }
 
-  void set_dedges(cubie::cube& c, int dedges) {
-    set_combperm(dedges / N_PERM4, dedges % N_PERM4, c.eperm, cubie::edge::COUNT, cubie::edge::DR);
+  void set_d_edges(cubie::cube& c, int d_edges) {
+    set_combperm(d_edges / N_PERM4, d_edges % N_PERM4, c.e_prm, cubie::edge::COUNT, cubie::edge::DR);
   }
 
   int get_corners(const cubie::cube& c) {
-    return get_perm8(c.cperm);
+    return get_perm8(c.c_prm);
   }
 
   void set_corners(cubie::cube& c, int corners) {
-    set_perm8(corners, c.cperm);
+    set_perm8(corners, c.c_prm);
   }
 
   /* Dedicated methods again more efficient than `*_posperm()` */
@@ -190,7 +190,7 @@ namespace coord {
   int get_slice1(const cubie::cube& c) {
     int slice1 = 0;
     for (int i = cubie::edge::COUNT - 1; i >= 0; i--) {
-      if (c.eperm[i] >= cubie::edge::FR)
+      if (c.e_prm[i] >= cubie::edge::FR)
         slice1 |= 1 << i;
     }
     return enc_comb[slice1];
@@ -201,15 +201,15 @@ namespace coord {
     int j = cubie::edge::FR;
     int cubie = 0;
     for (int i = 0; i < cubie::edge::COUNT; i++)
-      c.eperm[i] = (slice1 & (1 << i)) ? j++ : cubie++;
+      c.e_prm[i] = (slice1 & (1 << i)) ? j++ : cubie++;
   }
 
-  int get_udedges2(const cubie::cube& c) {
-    return get_perm8(c.eperm);
+  int get_ud_edges2(const cubie::cube& c) {
+    return get_perm8(c.e_prm);
   }
 
-  void set_udedges2(cubie::cube& c, int udedges2) {
-    set_perm8(udedges2, c.eperm);
+  void set_ud_edges2(cubie::cube& c, int ud_edges2) {
+    set_perm8(ud_edges2, c.e_prm);
   }
 
   // Computing only exactly the moves that are needed and storing them tightly would only make things more complicated
@@ -228,9 +228,9 @@ namespace coord {
     for (int coord = 0; coord < n_coord; coord++) {
       set_coord(c1, coord);
 
-      if (phase2) { // UDEDGES2 is only defined for phase 2 moves
-        for (move::mask moves = move::p2mask; moves; moves &= moves - 1) {
-          int m = ffsll(moves) - 1;
+      if (phase2) { // Ud_edges2 is only defined for phase 2 moves
+        for (uint64_t moves = move::p2_mask; moves; moves &= moves - 1) {
+          int m = std::countr_zero(moves);
           mul(c1, move::cubes[m], c2);
           move_coord[coord][m] = get_coord(c2);
         }
@@ -250,7 +250,7 @@ namespace coord {
     init_move(move_twist, N_TWIST, get_twist, set_twist, cubie::corner::mul);
     init_move(move_edges4, N_SLICE, get_slice, set_slice, cubie::edge::mul);
     init_move(move_corners, N_CORNERS, get_corners, set_corners, cubie::corner::mul);
-    init_move(move_udedges2, N_UDEDGES2, get_udedges2, set_udedges2, cubie::edge::mul, true);
+    init_move(move_ud_edges2, N_UD_EDGES2, get_ud_edges2, set_ud_edges2, cubie::edge::mul, true);
   }
 
 }

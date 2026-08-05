@@ -12,14 +12,13 @@ namespace prun {
   const int BITS_PER_AX = 8;
   const int BITS_PER_M = 1;
   const int N_SIMP = 6;
-  const int N_AX = 9;
 
   // Used to remap symmetry ext. phase 1 table entries back to actual situation
-  move::mask remap[2][16][1 << BITS_PER_AX];
+  uint64_t remap[2][16][1 << BITS_PER_AX];
 
-  prun1 *phase1;
-  uint8_t *phase2;
-  uint8_t *precheck;
+  std::array<uint32_t, N_FS1TWIST> phase1;
+  std::array<uint8_t, N_CORNUD2> phase2;
+  std::array<uint8_t, N_CSLICE2> precheck;
 
   inline int ones(int count) { return (1 << count) - 1; }
 
@@ -48,7 +47,6 @@ namespace prun {
   }
 
   void init_base() {
-    /* It is probably cleanest to simply handle the special HT case individually */
     for (int eff = 0; eff < 16; eff++) {
       for (int mask = 0; mask < 256; mask++) {
         int mask1 = mask & 0xf;
@@ -68,28 +66,11 @@ namespace prun {
       }
     }
     return;
-
-    for (int eff = 0; eff < 16; eff++) {
-      for (int mask = 0; mask < (1 << BITS_PER_AX); mask++) {
-        move::mask mask1 = mask;
-        mask1 >>= 1; // first bit encodes direction in HT
-
-        if (sym::eff_inv(eff))
-          mask1 = inv(mask1);
-        if (sym::eff_flip(eff))
-          mask1 = flip(mask1);
-
-        move::mask o = ones(BITS_PER_AX - 1); // first bit indicates direction but is not a move
-        remap[0][eff][mask] = ((mask & 1) ? 0 : ~mask1 & o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
-        remap[1][eff][mask] = ((mask & 1) ? ~mask1 & o : o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
-      }
-    }
   }
 
   void init_phase1() {
-    int n_moves = std::bitset<64>(move::p1mask).count(); // make sure not to consider B-moves in F5-mode
+    int n_moves = std::bitset<64>(move::p1_mask).count(); // make sure not to consider B-moves in F5-mode
 
-    phase1 = new prun1[N_FS1TWIST];
     std::fill(phase1, phase1 + N_FS1TWIST, EMPTY);
 
     phase1[coord::N_TWIST * sym::coord_c(sym::fslice1_sym[coord::fslice1(0, coord::SLICE1_SOLVED)])] = 0;
@@ -99,7 +80,7 @@ namespace prun {
     while (count < N_FS1TWIST) {
       int coord = 0;
 
-      for (int fs1sym = 0; fs1sym < sym::N_FSLICE1; fs1sym++) {
+      for (int fs1sym = 0; fs1sym < sym::N_FLIP_SLICE1; fs1sym++) {
         int fslice1 = sym::fslice1_raw[fs1sym];
         int flip = coord::fslice1_to_flip(fslice1);
         int slice = coord::slice1_to_slice(coord::fslice1_to_slice1(fslice1));
@@ -107,7 +88,7 @@ namespace prun {
         for (int twist = 0; twist < coord::N_TWIST; twist++) {
           if ((phase1[coord] & 0xff) == dist) {
             count++;
-            int deltas[move::COUNT1]; // easier encoding if B-face always exists (F5-mode ignores it anyways)
+            int deltas[move::COUNT]; // easier encoding if B-face always exists (F5-mode ignores it anyways)
 
             for (int m = 0; m < n_moves; m++) {
               int slice11 = coord::slice_to_slice1(coord::move_edges4[slice][m]);
@@ -133,13 +114,12 @@ namespace prun {
               }
             }
 
-            prun1 prun = 0;
-            int n_ax = 3;
-            int bits_per_ax = BITS_PER_AX;
+            uint32_t prun = 0;
+            const int n_ax = 3;
             /* Encode from left to right to preserve indexing of moves */
             for (int ax = n_ax - 1; ax >= 0; ax--) {
               bool away = false; // first bit of axis encoding (whether any move brings us further from the goal)
-              for (int i = ax * (bits_per_ax - 1); i < (ax + 1) * (bits_per_ax - 1); i++) {
+              for (int i = ax * (BITS_PER_AX - 1); i < (ax + 1) * (BITS_PER_AX - 1); i++) {
                 if (deltas[i] != 0) {
                   if (deltas[i] > 0)
                     away = true;
@@ -148,11 +128,11 @@ namespace prun {
               }
 
               int tmp = 0;
-              for (int i = (ax + 1) * (bits_per_ax - 1) - 1; i >= ax * (bits_per_ax - 1); i--)
+              for (int i = (ax + 1) * (BITS_PER_AX - 1) - 1; i >= ax * (BITS_PER_AX - 1); i--)
                 tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
               tmp |= away;
 
-              prun = (prun << bits_per_ax) | tmp;
+              prun = (prun << bits_peBITS_PER_AXr_ax) | tmp;
             }
             phase1[coord] |= prun << 8;
           }
@@ -166,7 +146,6 @@ namespace prun {
   }
 
   void init_phase2() {
-    phase2 = new uint8_t[N_CORNUD2];
     std::fill(phase2, phase2 + N_CORNUD2, EMPTY);
 
     phase2[0] = 0;
@@ -179,31 +158,31 @@ namespace prun {
       for (int csym = 0; csym < sym::N_CORNERS; csym++) {
         int corners = sym::corners_raw[csym];
 
-        for (int udedges2 = 0; udedges2 < coord::N_UDEDGES2; udedges2++) {
+        for (int ud_edges2 = 0; ud_edges2 < coord::N_UD_EDGES2; ud_edges2++) {
           if (phase2[coord] == dist) {
             count++;
 
-            for (move::mask moves = move::p2mask; moves; moves &= moves - 1) {
-              int m = ffsll(moves) - 1;
+            for (uint64_t moves = move::p2_mask; moves; moves &= moves - 1) {
+              int m = std::countr_zero(moves);
 
               int dist1 = dist + 1;
 
               int corners1 = coord::move_corners[corners][m];
-              int udedges21 = coord::move_udedges2[udedges2][m];
+              int ud_edges21 = coord::move_ud_edges2[ud_edges2][m];
               int tmp = sym::corners_sym[corners1];
-              udedges21 = sym::conj_udedges2[udedges21][sym::coord_s(tmp)];
+              ud_edges21 = sym::conj_ud_edges2[ud_edges21][sym::coord_s(tmp)];
               int csym1 = sym::coord_c(tmp);
-              int coord1 = coord::N_UDEDGES2 * csym1 + udedges21;
+              int coord1 = coord::N_UD_EDGES2 * csym1 + ud_edges21;
 
               if (phase2[coord1] <= dist1)
                 continue;
               phase2[coord1] = dist1;
-              coord1 -= udedges21;
+              coord1 -= ud_edges21;
 
               int selfs = sym::corners_selfs[csym1] >> 1;
               for (int s = 1; selfs > 0; s++) {
                 if (selfs & 1) {
-                  int coord2 = coord1 + sym::conj_udedges2[udedges21][s];
+                  int coord2 = coord1 + sym::conj_ud_edges2[ud_edges21][s];
                   if (phase2[coord2] > dist1)
                     phase2[coord2] = dist1;
                 }
@@ -221,7 +200,6 @@ namespace prun {
   }
 
   void init_precheck() {
-    precheck = new uint8_t[N_CSLICE2];
     std::fill(precheck, precheck + N_CSLICE2, EMPTY);
 
     precheck[0] = 0;
@@ -237,8 +215,8 @@ namespace prun {
             count++;
             int slice = coord::slice2_to_slice(slice2);
 
-            for (move::mask moves = move::p2mask; moves; moves &= moves - 1) {
-              int m = ffsll(moves) - 1;
+            for (uint64_t moves = move::p2_mask; moves; moves &= moves - 1) {
+              int m = std::countr_zero(moves);
 
               int dist1 = dist + 1;
 
@@ -259,17 +237,17 @@ namespace prun {
     }
   }
 
-  int get_phase1(int flip, int slice, int twist, int togo, move::mask& next) {
+  int get_phase1(int flip, int slice, int twist, int togo, uint64_t& next) {
     int tmp = sym::fslice1_sym[coord::fslice1(flip, coord::slice_to_slice1(slice))];
     int s = sym::coord_s(tmp);
-    prun1 prun = phase1[coord::N_TWIST * sym::coord_c(tmp) + sym::conj_twist[twist][s]];
+    uint32_t prun = phase1[coord::N_TWIST * sym::coord_c(tmp) + sym::conj_twist[twist][s]];
 
     int dist = prun & 0xff;
     int delta = togo - dist;
 
     // `delta` < 0 case can never happen during a real search
     if (delta > 1)
-      next = move::p1mask; // all moves are possible
+      next = move::p1_mask; // all moves are possible
     else {
       prun >>= 8; // get rid of dist
       next = 0;
@@ -282,9 +260,9 @@ namespace prun {
     return dist;
   }
 
-  int get_phase2(int corners, int udedges) {
+  int get_phase2(int corners, int ud_edges) {
     int tmp = sym::corners_sym[corners];
-    return phase2[coord::N_UDEDGES2 * sym::coord_c(tmp) + sym::conj_udedges2[udedges][sym::coord_s(tmp)]];
+    return phase2[coord::N_UD_EDGES2 * sym::coord_c(tmp) + sym::conj_ud_edges2[ud_edges][sym::coord_s(tmp)]];
   }
 
   int get_precheck(int corners, int slice) {
@@ -310,7 +288,7 @@ namespace prun {
       init_precheck();
 
       f = fopen(SAVE.c_str(), "wb");
-      if (fwrite(phase1, sizeof(prun1), N_FS1TWIST, f) != N_FS1TWIST)
+      if (fwrite(phase1, sizeof(uint32_t), N_FS1TWIST, f) != N_FS1TWIST)
         err = 1;
       if (fwrite(phase2, sizeof(uint8_t), N_CORNUD2, f) != N_CORNUD2)
         err = 1;
@@ -319,10 +297,10 @@ namespace prun {
       if (err)
         remove(SAVE.c_str()); // delete file if there was some error writing it
     } else {
-      phase1 = new prun1[N_FS1TWIST];
+      phase1 = new uint32_t[N_FS1TWIST];
       phase2 = new uint8_t[N_CORNUD2];
       precheck = new uint8_t[N_CSLICE2];
-      if (fread(phase1, sizeof(prun1), N_FS1TWIST, f) != N_FS1TWIST)
+      if (fread(phase1, sizeof(uint32_t), N_FS1TWIST, f) != N_FS1TWIST)
         err = 1;
       if (fread(phase2, sizeof(uint8_t), N_CORNUD2, f) != N_CORNUD2)
         err = 1;

@@ -17,8 +17,8 @@ namespace solve {
     int flip;
     int slice;
     int twist;
-    int uedges;
-    int dedges;
+    int u_edges;
+    int d_edges;
     int corners;
   };
 
@@ -34,12 +34,12 @@ namespace solve {
     int tlim; // search for this amount of milliseconds
 
     coordc dirs[N_DIRS]; // search directions
-    move::mask masks[move::COUNT1]; // split masks
+    uint64_t masks[move::COUNT]; // split masks
     int depths[N_DIRS]; // current search depths per direction
     int splits[N_DIRS]; // current search splits per direction
 
     bool done; // indicate that we are done
-    int lenlim; // only look for solution that are strictly shorter than this
+    int len_limit; // only look for solution that are strictly shorter than this
     std::mutex job_mtx; // thread-safety for selection of the next search task
     std::mutex sol_mtx; // thread-safety for reporting a solution
     std::priority_queue<searchres, std::vector<searchres>, decltype(&cmp)> sols {cmp}; // already found solutions
