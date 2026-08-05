@@ -43,7 +43,7 @@ namespace coord {
 
     int i = 0;
     for (int comb = 0; comb < (1 << cubie::edge::COUNT); comb++) {
-      if (std::bitset<cubie::edge::COUNT>(comb).count() == 4) {
+      if (std::popcount(comb) == 4) {
         enc_comb[comb] = i;
         dec_comb[i] = comb;
         i++;

@@ -21,6 +21,7 @@ namespace prun {
   std::array<uint8_t, N_CORNUD2> phase2;
   std::array<uint8_t, N_CSLICE2> precheck;
 
+  // Return a bitmask with `count` ones
   inline int ones(int count) { return (1 << count) - 1; }
 
   int rev(int movec, int count, int off = 0, int step = BITS_PER_M) {
@@ -70,7 +71,7 @@ namespace prun {
   }
 
   void init_phase1() {
-    int n_moves = std::bitset<64>(move::p1_mask).count(); // make sure not to consider B-moves in F5-mode
+    int n_moves = std::popcount(move::p1_mask);
 
     std::fill(phase1.begin(), phase1.end(), EMPTY);
 

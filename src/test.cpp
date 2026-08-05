@@ -149,7 +149,7 @@ void test_prun() {
   std::cout << "Testing pruning ..." << std::endl;
 
   srand(0);
-  int n_moves = std::bitset<64>(move::p1_mask).count(); // make sure not to consider B-moves in F5-mode
+  int n_moves = std::popcount(move::p1_mask);
 
   for (int i = 0; i < 1000; i++) {
     int flip = rand() % coord::N_FLIP;
