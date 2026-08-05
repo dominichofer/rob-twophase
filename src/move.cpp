@@ -1,5 +1,7 @@
 #include "move.h"
 
+#include <span>
+
 namespace move {
 
   using namespace cubie::corner;
@@ -197,7 +199,7 @@ namespace move {
     return s;
   }
 
-  int len(const std::vector<int>& mseq, const int* cost) {
+  int len(const std::vector<int>& mseq, std::span<const int> cost) {
     std::vector<int> comp;
     compress1(mseq, comp);
 
@@ -216,6 +218,6 @@ namespace move {
       1, 1, 1, 1, 1, 1,
       2, 2, 2, 2, 2, 2, 2, 2, 2
     };
-    return len(mseq, cost.data());
+    return len(mseq, cost);
   }
 }

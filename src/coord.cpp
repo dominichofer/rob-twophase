@@ -4,6 +4,7 @@
 #include <bitset>
 #include <cstring>
 #include <functional>
+#include <span>
 
 #include "cubie.h"
 
@@ -107,7 +108,7 @@ namespace coord {
 
   /* Faster than using `*_comperm()` twice */
 
-  int get_perm8(const int* cubies) {
+  int get_perm8(std::span<const int, 8> cubies) {
     int comb1 = 0;
     int perm1 = 0;
     int perm2 = 0;
@@ -126,7 +127,7 @@ namespace coord {
     return N_PERM4 * (N_PERM4 * comb1 + perm1) + perm2;
   }
 
-  void set_perm8(int perm8, int* cubies) {
+  void set_perm8(int perm8, std::span<int, 8> cubies) {
     int perm2 = dec_perm[perm8 % N_PERM4];
     int comb1 = dec_comb[(perm8 / N_PERM4) / N_PERM4];
     int perm1 = dec_perm[(perm8 / N_PERM4) % N_PERM4];
@@ -183,11 +184,11 @@ namespace coord {
   }
 
   int get_corners(const cubie::cube& c) {
-    return get_perm8(c.c_prm.data());
+    return get_perm8(c.c_prm);
   }
 
   void set_corners(cubie::cube& c, int corners) {
-    set_perm8(corners, c.c_prm.data());
+    set_perm8(corners, c.c_prm);
   }
 
   /* Dedicated methods again more efficient than `*_posperm()` */
@@ -210,18 +211,17 @@ namespace coord {
   }
 
   int get_ud_edges2(const cubie::cube& c) {
-    return get_perm8(c.e_prm.data());
+    return get_perm8(std::span(c.e_prm).first<8>());
   }
 
   void set_ud_edges2(cubie::cube& c, int ud_edges2) {
-    set_perm8(ud_edges2, c.e_prm.data());
+    set_perm8(ud_edges2, std::span(c.e_prm).first<8>());
   }
 
   // Computing only exactly the moves that are needed and storing them tightly would only make things more complicated
   // during solving (in exchange for completely negligible setup/memory-gains)
   void init_move(
-    std::array<uint16_t, move::COUNT>* move_coord,
-    int n_coord,
+    std::span<std::array<uint16_t, move::COUNT>> move_coord,
     std::function<int(const cubie::cube&)> get_coord,
     std::function<void(cubie::cube&, int)> set_coord,
     std::function<void(const cubie::cube&, const cubie::cube&, cubie::cube&)> mul,
@@ -230,7 +230,7 @@ namespace coord {
     cubie::cube c1 = cubie::SOLVED_CUBE; // coords only affect perm or ori -> one would be uninitialized
     cubie::cube c2;
 
-    for (int coord = 0; coord < n_coord; coord++) {
+    for (int coord = 0; coord < static_cast<int>(move_coord.size()); coord++) {
       set_coord(c1, coord);
 
       if (phase2) { // Ud_edges2 is only defined for phase 2 moves
@@ -251,11 +251,11 @@ namespace coord {
   void init() {
     init_encdec();
 
-    init_move(move_flip.data(), N_FLIP, get_flip, set_flip, cubie::edge::mul);
-    init_move(move_twist.data(), N_TWIST, get_twist, set_twist, cubie::corner::mul);
-    init_move(move_edges4.data(), N_SLICE, get_slice, set_slice, cubie::edge::mul);
-    init_move(move_corners.data(), N_CORNERS, get_corners, set_corners, cubie::corner::mul);
-    init_move(move_ud_edges2.data(), N_UD_EDGES2, get_ud_edges2, set_ud_edges2, cubie::edge::mul, true);
+    init_move(move_flip, get_flip, set_flip, cubie::edge::mul);
+    init_move(move_twist, get_twist, set_twist, cubie::corner::mul);
+    init_move(move_edges4, get_slice, set_slice, cubie::edge::mul);
+    init_move(move_corners, get_corners, set_corners, cubie::corner::mul);
+    init_move(move_ud_edges2, get_ud_edges2, set_ud_edges2, cubie::edge::mul, true);
   }
 
 }
