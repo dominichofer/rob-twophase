@@ -42,10 +42,10 @@ namespace face {
     }
 
     for (int corner = 0; corner < cubie::corner::COUNT; corner++) {
-      char cornlet[3];
+      std::array<char, 3> cornlet;
       for (int i = 0; i < 3; i++)
         cornlet[i] = s[CORNLETS[corner][i]];
-      auto tmp = corners.find(encode(std::string(cornlet, 3), 0));
+      auto tmp = corners.find(encode(std::string(cornlet.data(), 3), 0));
       if (tmp == corners.end())
         return 3; // invalid corner cubie
       c.c_prm[corner] = tmp->second.first;
@@ -53,10 +53,10 @@ namespace face {
     }
 
     for (int edge = 0; edge < cubie::edge::COUNT; edge++) {
-      char edgelet[2];
+      std::array<char, 2> edgelet;
       for (int i = 0; i < 2; i++)
         edgelet[i] = s[EDGELETS[edge][i]];
-      auto tmp = edges.find(encode(std::string(edgelet, 2), 0));
+      auto tmp = edges.find(encode(std::string(edgelet.data(), 2), 0));
       if (tmp == edges.end())
         return 4; // invalid edge cubie
       c.e_prm[edge] = tmp->second.first;
@@ -68,7 +68,7 @@ namespace face {
 
   // Assumes the given cube to be valid
   std::string from_cubie(const cubie::cube& c) {
-    char s[N_FACELETS];
+    std::array<char, N_FACELETS> s;
 
     for (int color = 0; color < color::COUNT; color++)
       s[9 * color + 4] = color::NAMES[color];
@@ -82,7 +82,7 @@ namespace face {
         s[EDGELETS[edge][i]] = cubie::edge::NAMES[c.e_prm[edge]][mod(i - c.e_ori[edge], 2)];
     }
 
-    return std::string(s, N_FACELETS);
+    return std::string(s.data(), N_FACELETS);
   }
 
 }

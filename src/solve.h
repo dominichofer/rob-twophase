@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
@@ -33,10 +34,10 @@ namespace solve {
     int max_len; // find solutions with at most this length; -1 means simply search for the full `tlimit`
     int tlim; // search for this amount of milliseconds
 
-    coordc dirs[N_DIRS]; // search directions
-    uint64_t masks[move::COUNT]; // split masks
-    int depths[N_DIRS]; // current search depths per direction
-    int splits[N_DIRS]; // current search splits per direction
+    std::array<coordc, N_DIRS> dirs; // search directions
+    std::array<uint64_t, move::COUNT> masks; // split masks
+    std::array<int, N_DIRS> depths; // current search depths per direction
+    std::array<int, N_DIRS> splits; // current search splits per direction
 
     bool done; // indicate that we are done
     int len_limit; // only look for solution that are strictly shorter than this

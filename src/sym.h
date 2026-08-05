@@ -12,20 +12,20 @@ namespace sym {
   const int N_CORNERS = 2768;
   const int ROT = 16; // 120 degree rotation around axis through URF and DLB corner
 
-  extern cubie::cube cubes[COUNT];
-  extern int inv[COUNT];
-  extern int effect[COUNT][3];
+  extern std::array<cubie::cube, COUNT> cubes;
+  extern std::array<int, COUNT> inv;
+  extern std::array<std::array<int, 3>, COUNT> effect;
 
-  extern int conj_move[move::COUNT][COUNT];
-  extern uint16_t conj_twist[coord::N_TWIST][COUNT_SUB];
-  extern uint16_t conj_ud_edges2[coord::N_UD_EDGES2][COUNT_SUB];
+  extern std::array<std::array<int, COUNT>, move::COUNT> conj_move;
+  extern std::array<std::array<uint16_t, COUNT_SUB>, coord::N_TWIST> conj_twist;
+  extern std::array<std::array<uint16_t, COUNT_SUB>, coord::N_UD_EDGES2> conj_ud_edges2;
 
-  extern uint32_t fslice1_sym[coord::N_FLIP_SLICE1];
-  extern uint32_t corners_sym[coord::N_CORNERS];
-  extern uint32_t fslice1_raw[N_FLIP_SLICE1];
-  extern uint16_t corners_raw[N_CORNERS];
-  extern uint16_t fslice1_selfs[N_FLIP_SLICE1];
-  extern uint16_t corners_selfs[N_CORNERS];
+  extern std::array<uint32_t, coord::N_FLIP_SLICE1> fslice1_sym;
+  extern std::array<uint32_t, coord::N_CORNERS> corners_sym;
+  extern std::array<uint32_t, N_FLIP_SLICE1> fslice1_raw;
+  extern std::array<uint16_t, N_CORNERS> corners_raw;
+  extern std::array<uint16_t, N_FLIP_SLICE1> fslice1_selfs;
+  extern std::array<uint16_t, N_CORNERS> corners_selfs;
 
   inline bool eff_inv(int eff) { return eff & 1; }
   inline bool eff_flip(int eff) { return eff & 2; }

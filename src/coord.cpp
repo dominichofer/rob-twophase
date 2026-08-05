@@ -11,19 +11,19 @@ namespace coord {
   const int N_C12K4 = 495; // binom(12, 4)
   const int N_PERM4 = 24; // 4!
 
-  uint16_t move_flip[N_FLIP][move::COUNT];
-  uint16_t move_twist[N_TWIST][move::COUNT];
-  uint16_t move_edges4[N_SLICE][move::COUNT];
-  uint16_t move_corners[N_CORNERS][move::COUNT];
-  uint16_t move_ud_edges2[N_UD_EDGES2][move::COUNT];
+  std::array<std::array<uint16_t, move::COUNT>, N_FLIP> move_flip;
+  std::array<std::array<uint16_t, move::COUNT>, N_TWIST> move_twist;
+  std::array<std::array<uint16_t, move::COUNT>, N_SLICE> move_edges4;
+  std::array<std::array<uint16_t, move::COUNT>, N_CORNERS> move_corners;
+  std::array<std::array<uint16_t, move::COUNT>, N_UD_EDGES2> move_ud_edges2;
 
   /* Used for en-/decoding pos-perm coords */
-  uint8_t enc_perm[1 << (4 * 2)]; // encode 4-elem perm as 8 bits
-  uint8_t dec_perm[N_PERM4];
-  uint16_t enc_comb[1 << 12]; // encode 4-elem comb as 12-bit mask with exactly 4 bits on
-  uint16_t dec_comb[N_C12K4];
+  std::array<uint8_t, 1 << (4 * 2)> enc_perm; // encode 4-elem perm as 8 bits
+  std::array<uint8_t, N_PERM4> dec_perm;
+  std::array<uint16_t, 1 << 12> enc_comb; // encode 4-elem comb as 12-bit mask with exactly 4 bits on
+  std::array<uint16_t, N_C12K4> dec_comb;
 
-  int binarize_perm(int perm[]) {
+  int binarize_perm(const std::array<int, 4>& perm) {
     int bin = 0;
     for (int i = 3; i >= 0; i--)
       bin = (bin << 2) | perm[i];
@@ -31,12 +31,12 @@ namespace coord {
   }
 
   void init_encdec() {
-    int perm[] = {0, 1, 2, 3};
+    std::array<int, 4> perm = {0, 1, 2, 3};
     for (int i = 0; i < N_PERM4; i++) {
       int bin = binarize_perm(perm);
       enc_perm[bin] = i;
       dec_perm[i] = bin;
-      std::next_permutation(perm, perm + 4);
+      std::next_permutation(perm.begin(), perm.end());
     }
 
     int i = 0;
@@ -49,32 +49,35 @@ namespace coord {
     }
   }
 
-  int get_ori(const int oris[], int len, int n_oris) {
+  template <std::size_t N>
+  int get_ori(const std::array<int, N>& oris, int n_oris) {
     int val = 0;
-    for (int i = 0; i < len - 1; i++) // last ori can be reconstructed by parity
+    for (std::size_t i = 0; i < N - 1; i++) // last ori can be reconstructed by parity
       val = n_oris * val + oris[i];
     return val;
   }
 
-  void set_ori(int val, int oris[], int len, int n_oris) {
+  template <std::size_t N>
+  void set_ori(int val, std::array<int, N>& oris, int n_oris) {
     int par = 0;
-    for (int i = len - 2; i >= 0; i--) {
+    for (int i = static_cast<int>(N) - 2; i >= 0; i--) {
       oris[i] = val % n_oris;
       par += oris[i];
       val /= n_oris;
     }
     // Ori parity must always be 0
-    oris[len - 1] = (n_oris - par % n_oris) % n_oris;
+    oris[N - 1] = (n_oris - par % n_oris) % n_oris;
   }
 
   // `mask` indicates which 4 edges to compute the coordinate for
-  int get_combperm(const int cubies[], int len, int mask) {
+  template <std::size_t N>
+  int get_combperm(const std::array<int, N>& cubies, int mask) {
     int min_cubie = ffs(mask) - 1;
 
     int comb = 0;
     int perm = 0;
 
-    for (int i = len - 1; i >= 0; i--) {
+    for (int i = static_cast<int>(N) - 1; i >= 0; i--) {
       if (mask & (1 << cubies[i])) {
         comb |= 1 << i;
         perm = (perm << 2) | (cubies[i] - min_cubie);
@@ -84,12 +87,13 @@ namespace coord {
     return N_PERM4 * enc_comb[comb] + enc_perm[perm];
   }
 
-  void set_combperm(int comb, int perm, int cubies[], int len, int min_cubie) {
+  template <std::size_t N>
+  void set_combperm(int comb, int perm, std::array<int, N>& cubies, int min_cubie) {
     comb = dec_comb[comb];
     perm = dec_perm[perm];
 
     int cubie = 0;
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < static_cast<int>(N); i++) {
       if (cubie == min_cubie)
         cubie += 4;
       if (comb & (1 << i)) {
@@ -102,7 +106,7 @@ namespace coord {
 
   /* Faster than using `*_comperm()` twice */
 
-  int get_perm8(const int cubies[]) {
+  int get_perm8(const int* cubies) {
     int comb1 = 0;
     int perm1 = 0;
     int perm2 = 0;
@@ -121,7 +125,7 @@ namespace coord {
     return N_PERM4 * (N_PERM4 * comb1 + perm1) + perm2;
   }
 
-  void set_perm8(int perm8, int cubies[]) {
+  void set_perm8(int perm8, int* cubies) {
     int perm2 = dec_perm[perm8 % N_PERM4];
     int comb1 = dec_comb[(perm8 / N_PERM4) / N_PERM4];
     int perm1 = dec_perm[(perm8 / N_PERM4) % N_PERM4];
@@ -138,51 +142,51 @@ namespace coord {
   }
 
   int get_twist(const cubie::cube& c) {
-    return get_ori(c.c_ori, cubie::corner::COUNT, 3);
+    return get_ori(c.c_ori, 3);
   }
 
   void set_twist(cubie::cube& c, int twist) {
-    set_ori(twist, c.c_ori, cubie::corner::COUNT, 3);
+    set_ori(twist, c.c_ori, 3);
   }
 
   int get_flip(const cubie::cube& c) {
-    return get_ori(c.e_ori, cubie::edge::COUNT, 2);
+    return get_ori(c.e_ori, 2);
   }
 
   void set_flip(cubie::cube& c, int flip) {
-    set_ori(flip, c.e_ori, cubie::edge::COUNT, 2);
+    set_ori(flip, c.e_ori, 2);
   }
 
   int get_slice(const cubie::cube& c) {
-    return get_combperm(c.e_prm, cubie::edge::COUNT, 0xf00);
+    return get_combperm(c.e_prm, 0xf00);
   }
 
   void set_slice(cubie::cube& c, int slice) {
-    set_combperm(slice / N_PERM4, slice % N_PERM4, c.e_prm, cubie::edge::COUNT, cubie::edge::FR);
+    set_combperm(slice / N_PERM4, slice % N_PERM4, c.e_prm, cubie::edge::FR);
   }
 
   int get_u_edges(const cubie::cube& c) {
-    return get_combperm(c.e_prm, cubie::edge::COUNT, 0x00f);
+    return get_combperm(c.e_prm, 0x00f);
   }
 
   void set_u_edges(cubie::cube& c, int u_edges) {
-    set_combperm(u_edges / N_PERM4, u_edges % N_PERM4, c.e_prm, cubie::edge::COUNT, cubie::edge::UR);
+    set_combperm(u_edges / N_PERM4, u_edges % N_PERM4, c.e_prm, cubie::edge::UR);
   }
 
   int get_d_edges(const cubie::cube& c) {
-    return get_combperm(c.e_prm, cubie::edge::COUNT, 0x0f0);
+    return get_combperm(c.e_prm, 0x0f0);
   }
 
   void set_d_edges(cubie::cube& c, int d_edges) {
-    set_combperm(d_edges / N_PERM4, d_edges % N_PERM4, c.e_prm, cubie::edge::COUNT, cubie::edge::DR);
+    set_combperm(d_edges / N_PERM4, d_edges % N_PERM4, c.e_prm, cubie::edge::DR);
   }
 
   int get_corners(const cubie::cube& c) {
-    return get_perm8(c.c_prm);
+    return get_perm8(c.c_prm.data());
   }
 
   void set_corners(cubie::cube& c, int corners) {
-    set_perm8(corners, c.c_prm);
+    set_perm8(corners, c.c_prm.data());
   }
 
   /* Dedicated methods again more efficient than `*_posperm()` */
@@ -205,17 +209,17 @@ namespace coord {
   }
 
   int get_ud_edges2(const cubie::cube& c) {
-    return get_perm8(c.e_prm);
+    return get_perm8(c.e_prm.data());
   }
 
   void set_ud_edges2(cubie::cube& c, int ud_edges2) {
-    set_perm8(ud_edges2, c.e_prm);
+    set_perm8(ud_edges2, c.e_prm.data());
   }
 
   // Computing only exactly the moves that are needed and storing them tightly would only make things more complicated
   // during solving (in exchange for completely negligible setup/memory-gains)
   void init_move(
-    uint16_t move_coord[][move::COUNT],
+    std::array<uint16_t, move::COUNT>* move_coord,
     int n_coord,
     int (*get_coord)(const cubie::cube&),
     void (*set_coord)(cubie::cube&, int),
@@ -246,11 +250,11 @@ namespace coord {
   void init() {
     init_encdec();
 
-    init_move(move_flip, N_FLIP, get_flip, set_flip, cubie::edge::mul);
-    init_move(move_twist, N_TWIST, get_twist, set_twist, cubie::corner::mul);
-    init_move(move_edges4, N_SLICE, get_slice, set_slice, cubie::edge::mul);
-    init_move(move_corners, N_CORNERS, get_corners, set_corners, cubie::corner::mul);
-    init_move(move_ud_edges2, N_UD_EDGES2, get_ud_edges2, set_ud_edges2, cubie::edge::mul, true);
+    init_move(move_flip.data(), N_FLIP, get_flip, set_flip, cubie::edge::mul);
+    init_move(move_twist.data(), N_TWIST, get_twist, set_twist, cubie::corner::mul);
+    init_move(move_edges4.data(), N_SLICE, get_slice, set_slice, cubie::edge::mul);
+    init_move(move_corners.data(), N_CORNERS, get_corners, set_corners, cubie::corner::mul);
+    init_move(move_ud_edges2.data(), N_UD_EDGES2, get_ud_edges2, set_ud_edges2, cubie::edge::mul, true);
   }
 
 }

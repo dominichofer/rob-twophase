@@ -20,11 +20,11 @@ namespace solve {
     Engine& solver; // report solutions to
 
     /* Keep track of reconstructed edges that remain valid in the current search path */
-    int u_edges[50];
-    int d_edges[50];
+    std::array<int, 50> u_edges;
+    std::array<int, 50> d_edges;
     int edges_depth;
 
-    int moves[50]; // current (partial) solution
+    std::array<int, 50> moves; // current (partial) solution
 
   private:
     // phase 1 search; iterates through all solution with exactly `togo` moves
@@ -49,7 +49,7 @@ namespace solve {
     uint64_t next;
     prun::get_phase1(cube.flip, cube.slice, cube.twist, p1_depth, next);
     next &= move::p1_mask & d0_moves; // block B-moves in F5 mode here and select current search split
-    phase1(0, p1_depth, cube.flip, cube.slice, cube.twist, cube.corners, next, 0);
+    phase1(0, p1_depth, cube.flip, cube.slice, cube.twist, cube.corners, next);
   }
 
   void Search::phase1(int depth, int togo, int flip, int slice, int twist, int corners, uint64_t next)
@@ -130,7 +130,7 @@ namespace solve {
 
       if (prun::get_phase2(corners1, ud_edges21) < togo) {
         moves[depth] = m;
-        if (phase2(depth + 1, togo - 1, slice1, ud_edges21, corners1, move::p2_mask & move::next[m], 0))
+        if (phase2(depth + 1, togo - 1, slice1, ud_edges21, corners1, move::p2_mask & move::next[m]))
           return true; // return as soon as we have a solution
       }
     }

@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <string>
 
 namespace cubie {
@@ -17,7 +18,7 @@ namespace cubie {
     const int DBL = 6;
     const int DRB = 7;
 
-    const std::string NAMES[] = {
+    const std::array<std::string, COUNT> NAMES = {
       "URF", "UFL", "ULB", "UBR", "DFR", "DLF", "DBL", "DRB"
     };
   }
@@ -40,7 +41,7 @@ namespace cubie {
     const int BL = 10;
     const int BR = 11;
 
-    const std::string NAMES[] = {
+    const std::array<std::string, COUNT> NAMES = {
       "UR", "UF", "UL", "UB", "DR", "DF", "DL", "DB", "FR", "FL", "BL", "BR"
     };
   }

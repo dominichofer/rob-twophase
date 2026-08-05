@@ -8,15 +8,15 @@
 namespace cubie {
 
   /* Faster than tricky if-else sequences for handling mirrored states */
-  int mul_c_oris[][6] = {
+  std::array<std::array<int, 6>, 6> mul_c_oris = {{
     {0, 1, 2, 3, 4, 5},
     {1, 2, 0, 4, 5, 3},
     {2, 0, 1, 5, 3, 4},
     {3, 5, 4, 0, 2, 1},
     {4, 3, 5, 1, 0, 2},
     {5, 4, 3, 2, 1, 0}
-  };
-  int inv_c_ori[] = {
+  }};
+  std::array<int, 6> inv_c_ori = {
     0, 2, 1, 3, 4, 5
   };
 
@@ -37,11 +37,12 @@ namespace cubie {
     }
   }
 
-  // Permutation partiy =  #inversions % 2
-  bool parity(const int perm[], int len) {
+  // Permutation parity = #inversions % 2
+  template <std::size_t N>
+  bool parity(const std::array<int, N>& perm) {
     int par = 0;
-    for (int i = 0; i < len; i++) {
-      for (int j = 0; j < i; j++) {
+    for (std::size_t i = 0; i < N; i++) {
+      for (std::size_t j = 0; j < i; j++) {
         if (perm[j] > perm[i])
           par++;
       }
@@ -63,19 +64,6 @@ namespace cubie {
       into.c_ori[i] = inv_c_ori[c.c_ori[into.c_prm[i]]];
     for (int i = 0; i < edge::COUNT; i++)
       into.e_ori[i] = c.e_ori[into.e_prm[i]];
-  }
-
-  template <std::size_t N>
-  bool is_permutation(std::array<int, N> prm)
-  {
-      std::sort(prm.begin(), prm.end());
-
-      for (std::size_t i = 0; i < N; ++i) {
-          if (prm[i] != static_cast<int>(i))
-              return false;
-      }
-
-      return true;
   }
 
   template <std::size_t N>
@@ -131,8 +119,8 @@ namespace cubie {
       c.e_prm[i] = i;
 
     coord::set_corners(c, std::uniform_int_distribution<int>(0, coord::N_CORNERS)(gen));
-    std::shuffle(c.e_prm, c.e_prm + edge::COUNT, gen); // no coordinate for all edges
-    if (parity(c.c_prm, corner::COUNT) != parity(c.e_prm, edge::COUNT))
+    std::shuffle(c.e_prm.begin(), c.e_prm.end(), gen); // no coordinate for all edges
+    if (parity(c.c_prm) != parity(c.e_prm))
       std::swap(c.c_prm[corner::COUNT - 2], c.c_prm[corner::COUNT - 1]); // flip parity
 
     coord::set_twist(c, std::uniform_int_distribution<int>(0, coord::N_TWIST - 1)(gen));

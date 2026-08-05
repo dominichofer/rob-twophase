@@ -1,3 +1,4 @@
+#include <array>
 #include <bitset>
 #include <chrono>
 #include <iostream>
@@ -53,7 +54,7 @@ void test_getset(int (*get_coord)(const cubie::cube&), void (*set_coord)(cubie::
   ok();
 }
 
-void test_movecoord(uint16_t move_coord[][move::COUNT], int n_coord, uint64_t moves = move::p1_mask | move::p2_mask) {
+void test_movecoord(std::array<uint16_t, move::COUNT>* move_coord, int n_coord, uint64_t moves = move::p1_mask | move::p2_mask) {
   for (int coord = 0; coord < n_coord; coord++) {
     for (; moves; moves &= moves - 1) {
       int m = std::countr_zero(moves);
@@ -78,11 +79,11 @@ void test_coord() {
   test_getset(coord::get_slice1, coord::set_slice1, coord::N_SLICE1);
   test_getset(coord::get_ud_edges2, coord::set_ud_edges2, coord::N_UD_EDGES2);
 
-  test_movecoord(coord::move_flip, coord::N_FLIP);
-  test_movecoord(coord::move_twist, coord::N_TWIST);
-  test_movecoord(coord::move_edges4, coord::N_SLICE);
-  test_movecoord(coord::move_corners, coord::N_CORNERS);
-  test_movecoord(coord::move_ud_edges2, coord::N_UD_EDGES2, move::p2_mask);
+  test_movecoord(coord::move_flip.data(), coord::N_FLIP);
+  test_movecoord(coord::move_twist.data(), coord::N_TWIST);
+  test_movecoord(coord::move_edges4.data(), coord::N_SLICE);
+  test_movecoord(coord::move_corners.data(), coord::N_CORNERS);
+  test_movecoord(coord::move_ud_edges2.data(), coord::N_UD_EDGES2, move::p2_mask);
 }
 
 void test_move() {
@@ -126,7 +127,7 @@ void test_move() {
 
 }
 
-void test_conj(uint16_t conj_coord[][sym::COUNT_SUB], int n_coord) {
+void test_conj(std::array<uint16_t, sym::COUNT_SUB>* conj_coord, int n_coord) {
   for (int coord = 0; coord < n_coord; coord++) {
     for (int s = 0; s < sym::COUNT_SUB; s++) {
       if (conj_coord[conj_coord[coord][s]][sym::inv[s]] != coord)
@@ -140,8 +141,8 @@ void test_conj(uint16_t conj_coord[][sym::COUNT_SUB], int n_coord) {
 
 void test_sym() {
   std::cout << "Testing sym level ..." << std::endl;
-  test_conj(sym::conj_twist, coord::N_TWIST);
-  test_conj(sym::conj_ud_edges2, coord::N_UD_EDGES2);
+  test_conj(sym::conj_twist.data(), coord::N_TWIST);
+  test_conj(sym::conj_ud_edges2.data(), coord::N_UD_EDGES2);
 }
 
 void test_prun() {

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -191,7 +192,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Avg. Time: " << std::accumulate(times.begin(), times.end(), 0.) / times.size() << " ms" << std::endl;
         std::cout << "Avg. Moves: " << mean(sols, move::len_ht) << std::endl;
 
-        int freq[100];
+        std::array<int, 100> freq = {};
         int min = 100;
         int max = 0;
         for (auto& sol : sols) {

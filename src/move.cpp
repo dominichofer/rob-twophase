@@ -6,7 +6,7 @@ namespace move {
   using namespace cubie::edge;
 
   /* Select moves and order according to used metric */
-  const int map[] = {
+  const std::array<int, 45> map = {
     0, 1, 2, 3, 4, 5,
     -1, -1, -1, -1, -1, -1, -1, -1, -1,
     6, 7, 8, 9, 10, 11,
@@ -15,20 +15,20 @@ namespace move {
     -1, -1, -1, -1, -1, -1, -1, -1, -1
   };
 
-  std::string names[COUNT];
-  cubie::cube cubes[COUNT];
-  int inv[COUNT];
+  std::array<std::string, COUNT> names;
+  std::array<cubie::cube, COUNT> cubes;
+  std::array<int, COUNT> inv;
 
-  uint64_t next[COUNT];
-  uint64_t next_p1p2[COUNT];
+  std::array<uint64_t, COUNT> next;
+  std::array<uint64_t, COUNT> next_p1p2;
 
   uint64_t p1_mask = bit(45) - 1;
   uint64_t p2_mask = 0x10482097fff; // 000010000 010010 000010000 010010 111111111 111111;
 
   // For full set of 45 moves no matter the solving mode
-  std::string names1[45];
-  int merge[45][45];
-  int unmap[COUNT];
+  std::array<std::string, 45> names1;
+  std::array<std::array<int, 45>, 45> merge;
+  std::array<int, COUNT> unmap;
 
   // Translate bitmask from full moveset to configured one
   uint64_t reindex(uint64_t mm) {
@@ -47,14 +47,14 @@ namespace move {
         unmap[map[m]] = m;
     }
 
-    cubie::cube cubes1[45];
-    int inv1[45];
+    std::array<cubie::cube, 45> cubes1;
+    std::array<int, 45> inv1;
     // Not initializing the following arrays apparently causes problems on MacOS
-    uint64_t next1[45] = {0};
+    std::array<uint64_t, 45> next1 = {};
 
-    std::string fnames[] = {"U", "D", "R", "L", "F", "B"};
-    std::string pnames[] = {"", "2", "'"};
-    cubie::cube fcubes[] = {
+    std::array<std::string, 6> fnames = {"U", "D", "R", "L", "F", "B"};
+    std::array<std::string, 3> pnames = {"", "2", "'"};
+    std::array<cubie::cube, 6> fcubes = {{
       { // U
         {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
         {UB, UR, UF, UL, DR, DF, DL, DB, FR, FL, BL, BR},
@@ -87,7 +87,7 @@ namespace move {
         {0, 0, 1, 2, 0, 0, 2, 1},
         {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1}
       }
-    };
+    }};
 
     for (int ax = 0; ax < 3; ax++) {
       int i1 = 15 * ax; // index to start first face moves
@@ -197,7 +197,7 @@ namespace move {
     return s;
   }
 
-  int len(const std::vector<int>& mseq, int cost[]) {
+  int len(const std::vector<int>& mseq, const int* cost) {
     std::vector<int> comp;
     compress1(mseq, comp);
 
@@ -208,7 +208,7 @@ namespace move {
   }
 
   int len_ht(const std::vector<int>& mseq) {
-    int cost[] = {
+    std::array<int, 45> cost = {
       1, 1, 1, 1, 1, 1,
       2, 2, 2, 2, 2, 2, 2, 2, 2,
       1, 1, 1, 1, 1, 1,
@@ -216,6 +216,6 @@ namespace move {
       1, 1, 1, 1, 1, 1,
       2, 2, 2, 2, 2, 2, 2, 2, 2
     };
-    return len(mseq, cost);
+    return len(mseq, cost.data());
   }
 }

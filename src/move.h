@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -9,12 +10,12 @@ namespace move
 {
   const int COUNT = 18;
 
-  extern std::string names[COUNT];
-  extern cubie::cube cubes[COUNT];
-  extern int inv[COUNT];
+  extern std::array<std::string, COUNT> names;
+  extern std::array<cubie::cube, COUNT> cubes;
+  extern std::array<int, COUNT> inv;
 
-  extern uint64_t next[COUNT]; // successor moves that should be explored
-  extern uint64_t next_p1p2[COUNT]; // `next` for phase1 to phase 2 transition
+  extern std::array<uint64_t, COUNT> next; // successor moves that should be explored
+  extern std::array<uint64_t, COUNT> next_p1p2; // `next` for phase1 to phase 2 transition
 
   extern uint64_t p1_mask; // phase 1 moves
   extern uint64_t p2_mask; // phase 2 moves

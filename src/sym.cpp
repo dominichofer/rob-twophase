@@ -7,20 +7,20 @@ namespace sym {
 
   const uint32_t EMPTY = ~uint32_t(0);
 
-  cubie::cube cubes[COUNT];
-  int inv[COUNT];
-  int effect[COUNT][3];
+  std::array<cubie::cube, COUNT> cubes;
+  std::array<int, COUNT> inv;
+  std::array<std::array<int, 3>, COUNT> effect;
 
-  int conj_move[move::COUNT][COUNT];
-  uint16_t conj_twist[coord::N_TWIST][COUNT_SUB];
-  uint16_t conj_ud_edges2[coord::N_UD_EDGES2][COUNT_SUB];
+  std::array<std::array<int, COUNT>, move::COUNT> conj_move;
+  std::array<std::array<uint16_t, COUNT_SUB>, coord::N_TWIST> conj_twist;
+  std::array<std::array<uint16_t, COUNT_SUB>, coord::N_UD_EDGES2> conj_ud_edges2;
 
-  uint32_t fslice1_sym[coord::N_FLIP_SLICE1];
-  uint32_t corners_sym[coord::N_CORNERS];
-  uint32_t fslice1_raw[N_FLIP_SLICE1];
-  uint16_t corners_raw[N_CORNERS];
-  uint16_t fslice1_selfs[N_FLIP_SLICE1];
-  uint16_t corners_selfs[N_CORNERS];
+  std::array<uint32_t, coord::N_FLIP_SLICE1> fslice1_sym;
+  std::array<uint32_t, coord::N_CORNERS> corners_sym;
+  std::array<uint32_t, N_FLIP_SLICE1> fslice1_raw;
+  std::array<uint16_t, N_CORNERS> corners_raw;
+  std::array<uint16_t, N_FLIP_SLICE1> fslice1_selfs;
+  std::array<uint16_t, N_CORNERS> corners_selfs;
 
   void init_base() {
     cubie::cube c = cubie::SOLVED_CUBE;
@@ -107,7 +107,7 @@ namespace sym {
   }
 
   void init_conjcoord(
-    uint16_t conj_coord[][COUNT_SUB],
+    std::array<uint16_t, COUNT_SUB>* conj_coord,
     int n_coords,
     int (*get_coord)(const cubie::cube&),
     void (*set_coord)(cubie::cube&, int),
@@ -129,7 +129,7 @@ namespace sym {
   }
 
   void init_fslice1() {
-    std::fill(fslice1_sym, fslice1_sym + coord::N_FLIP_SLICE1, EMPTY);
+    std::fill(fslice1_sym.begin(), fslice1_sym.end(), EMPTY);
 
     cubie::cube c1 = cubie::SOLVED_CUBE;
     cubie::cube c2;
@@ -163,7 +163,7 @@ namespace sym {
   }
 
   void init_corners() {
-    std::fill(corners_sym, corners_sym + coord::N_CORNERS, EMPTY);
+    std::fill(corners_sym.begin(), corners_sym.end(), EMPTY);
 
     cubie::cube c1 = cubie::SOLVED_CUBE;
     cubie::cube c2;
@@ -194,8 +194,8 @@ namespace sym {
 
   void init() {
     init_base();
-    init_conjcoord(conj_twist, coord::N_TWIST, coord::get_twist, coord::set_twist, cubie::corner::mul);
-    init_conjcoord(conj_ud_edges2, coord::N_UD_EDGES2, coord::get_ud_edges2, coord::set_ud_edges2, cubie::edge::mul);
+    init_conjcoord(conj_twist.data(), coord::N_TWIST, coord::get_twist, coord::set_twist, cubie::corner::mul);
+    init_conjcoord(conj_ud_edges2.data(), coord::N_UD_EDGES2, coord::get_ud_edges2, coord::set_ud_edges2, cubie::edge::mul);
     init_fslice1();
     init_corners();
   }

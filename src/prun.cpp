@@ -14,7 +14,7 @@ namespace prun {
   const int N_SIMP = 6;
 
   // Used to remap symmetry ext. phase 1 table entries back to actual situation
-  uint64_t remap[2][16][1 << BITS_PER_AX];
+  std::array<std::array<std::array<uint64_t, 1 << BITS_PER_AX>, 16>, 2> remap;
 
   std::array<uint32_t, N_FS1TWIST> phase1;
   std::array<uint8_t, N_CORNUD2> phase2;
@@ -71,7 +71,7 @@ namespace prun {
   void init_phase1() {
     int n_moves = std::bitset<64>(move::p1_mask).count(); // make sure not to consider B-moves in F5-mode
 
-    std::fill(phase1, phase1 + N_FS1TWIST, EMPTY);
+    std::fill(phase1.begin(), phase1.end(), EMPTY);
 
     phase1[coord::N_TWIST * sym::coord_c(sym::fslice1_sym[coord::fslice1(0, coord::SLICE1_SOLVED)])] = 0;
     int count = 0;
@@ -88,7 +88,7 @@ namespace prun {
         for (int twist = 0; twist < coord::N_TWIST; twist++) {
           if ((phase1[coord] & 0xff) == dist) {
             count++;
-            int deltas[move::COUNT]; // easier encoding if B-face always exists (F5-mode ignores it anyways)
+            std::array<int, move::COUNT> deltas; // easier encoding if B-face always exists (F5-mode ignores it anyways)
 
             for (int m = 0; m < n_moves; m++) {
               int slice11 = coord::slice_to_slice1(coord::move_edges4[slice][m]);
@@ -132,7 +132,7 @@ namespace prun {
                 tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
               tmp |= away;
 
-              prun = (prun << bits_peBITS_PER_AXr_ax) | tmp;
+              prun = (prun << BITS_PER_AX) | tmp;
             }
             phase1[coord] |= prun << 8;
           }
@@ -146,7 +146,7 @@ namespace prun {
   }
 
   void init_phase2() {
-    std::fill(phase2, phase2 + N_CORNUD2, EMPTY);
+    std::fill(phase2.begin(), phase2.end(), EMPTY);
 
     phase2[0] = 0;
     int count = 0;
@@ -200,7 +200,7 @@ namespace prun {
   }
 
   void init_precheck() {
-    std::fill(precheck, precheck + N_CSLICE2, EMPTY);
+    std::fill(precheck.begin(), precheck.end(), EMPTY);
 
     precheck[0] = 0;
     int dist = 0;
@@ -288,23 +288,20 @@ namespace prun {
       init_precheck();
 
       f = fopen(SAVE.c_str(), "wb");
-      if (fwrite(phase1, sizeof(uint32_t), N_FS1TWIST, f) != N_FS1TWIST)
+      if (fwrite(phase1.data(), sizeof(uint32_t), N_FS1TWIST, f) != N_FS1TWIST)
         err = 1;
-      if (fwrite(phase2, sizeof(uint8_t), N_CORNUD2, f) != N_CORNUD2)
+      if (fwrite(phase2.data(), sizeof(uint8_t), N_CORNUD2, f) != N_CORNUD2)
         err = 1;
-      if (fwrite(precheck, sizeof(uint8_t), N_CSLICE2, f) != N_CSLICE2)
+      if (fwrite(precheck.data(), sizeof(uint8_t), N_CSLICE2, f) != N_CSLICE2)
         err = 1;
       if (err)
         remove(SAVE.c_str()); // delete file if there was some error writing it
     } else {
-      phase1 = new uint32_t[N_FS1TWIST];
-      phase2 = new uint8_t[N_CORNUD2];
-      precheck = new uint8_t[N_CSLICE2];
-      if (fread(phase1, sizeof(uint32_t), N_FS1TWIST, f) != N_FS1TWIST)
+      if (fread(phase1.data(), sizeof(uint32_t), N_FS1TWIST, f) != N_FS1TWIST)
         err = 1;
-      if (fread(phase2, sizeof(uint8_t), N_CORNUD2, f) != N_CORNUD2)
+      if (fread(phase2.data(), sizeof(uint8_t), N_CORNUD2, f) != N_CORNUD2)
         err = 1;
-      if (fread(precheck, sizeof(uint8_t), N_CSLICE2, f) != N_CSLICE2)
+      if (fread(precheck.data(), sizeof(uint8_t), N_CSLICE2, f) != N_CSLICE2)
         err = 1;
     }
 
