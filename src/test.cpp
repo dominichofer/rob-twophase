@@ -22,13 +22,13 @@ void test_cubie() {
   cubie::inv(c, tmp1);
   if (c != tmp1)
     error();
-  cubie::mul(c, tmp1, tmp2);
+  tmp2 = c * tmp1;
   if (c != tmp2)
     error();
 
   cubie::shuffle(c);
   cubie::inv(c, tmp1);
-  cubie::mul(c, tmp1, tmp2);
+  tmp2 = c * tmp1;
   if (tmp2 != cubie::SOLVED_CUBE)
     error();
 
@@ -94,10 +94,10 @@ void test_move() {
   for (int m = 0; m < move::COUNT; m++) {
     if (move::inv[move::inv[m]] != m)
       error();
-    cubie::mul(move::cubes[m], move::cubes[move::inv[m]], c);
+    c = move::cubes[m] * move::cubes[move::inv[m]];
     if (c != cubie::SOLVED_CUBE)
       error();
-    cubie::mul(move::cubes[move::inv[m]], move::cubes[m], c);
+    c = move::cubes[move::inv[m]] * move::cubes[m];
     if (c != cubie::SOLVED_CUBE)
       error();
   }
@@ -200,7 +200,7 @@ bool check(const cubie::cube &c, const std::vector<int>& sol) {
 
   c1 = c;
   for (int m : sol) {
-    cubie::mul(c1, move::cubes[m], c2);
+    c2 = c1 * move::cubes[m];
     std::swap(c1, c2);
   }
 

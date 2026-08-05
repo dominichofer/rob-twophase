@@ -65,7 +65,7 @@ bool check(const cubie::cube &c, const std::vector<int>& sol) {
 
   c1 = c;
   for (int m : sol) {
-    cubie::mul(c1, move::cubes[m], c2);
+    c2 = c1 * move::cubes[m];
     std::swap(c1, c2);
   }
 

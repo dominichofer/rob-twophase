@@ -50,9 +50,11 @@ namespace cubie {
     return par & 1;
   }
 
-  void mul(const cubie::cube& c1, const cubie::cube& c2, cubie::cube& into) {
-    corner::mul(c1, c2, into);
-    edge::mul(c1, c2, into);
+  cube cube::operator*(const cube& c2) const {
+    cube result;
+    corner::mul(*this, c2, result);
+    edge::mul(*this, c2, result);
+    return result;
   }
 
   void inv(const cube& c, cube& into) {

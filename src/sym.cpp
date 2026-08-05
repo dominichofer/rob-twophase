@@ -26,7 +26,6 @@ namespace sym {
 
   void init_base() {
     cubie::cube c = cubie::SOLVED_CUBE;
-    cubie::cube tmp;
 
     cubie::cube lr2 = {
       {UFL, URF, UBR, ULB, DLF, DFR, DRB, DBL},
@@ -54,28 +53,21 @@ namespace sym {
     for (int i = 0; i < COUNT; i++) {
       cubes[i] = c;
 
-      cubie::mul(c, lr2, tmp);
-      std::swap(tmp, c);
+      c = c * lr2;
 
-      if (i % 2 == 1) {
-        cubie::mul(c, f2, tmp);
-        std::swap(tmp, c);
-      }
-      if (i % 4 == 3) {
-        cubie::mul(c, u4, tmp);
-        std::swap(tmp, c);
-      }
-      if (i % 16 == 15) {
-        cubie::mul(c, urf3, tmp);
-        std::swap(tmp, c);
-      }
+      if (i % 2 == 1)
+        c = c * f2;
+      if (i % 4 == 3)
+        c = c * u4;
+      if (i % 16 == 15)
+        c = c * urf3;
     }
 
     /* Maybe not the most efficient, but overall time spent here completely negligible. */
 
     for (int i = 0; i < COUNT; i++) {
       for (int j = 0; j < COUNT; j++) {
-        cubie::mul(cubes[i], cubes[j], c);
+        c = cubes[i] * cubes[j];
         if (c == cubie::SOLVED_CUBE) {
           inv[i] = j;
           break;
@@ -85,8 +77,7 @@ namespace sym {
 
     for (int m = 0; m < move::COUNT; m++) {
       for (int s = 0; s < COUNT; s++) {
-        cubie::mul(cubes[s], move::cubes[m], tmp);
-        cubie::mul(tmp, cubes[inv[s]], c);
+        c = cubes[s] * move::cubes[m] * cubes[inv[s]];
         for (int conj = 0; conj < move::COUNT; conj++) {
           if (c == move::cubes[conj]) {
             conj_move[m][s] = conj;

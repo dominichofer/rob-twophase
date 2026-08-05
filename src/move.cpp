@@ -105,7 +105,7 @@ namespace move {
         if (cnt == 0)
           cubes1[m] = fcubes[f1];
         else
-          cubie::mul(cubes1[m - 1], fcubes[f1], cubes1[m]);
+          cubes1[m] = cubes1[m - 1] * fcubes[f1];
         inv1[m] = i1 + (2 - cnt);
         next1[m] |= uint64_t(0x7) << i1; // block any moves on same face
         next1[m] |= uint64_t(0x1ff) << i3; // block all axial moves
@@ -116,7 +116,7 @@ namespace move {
         if (cnt == 0)
           cubes1[m] = fcubes[f2];
         else
-          cubie::mul(cubes1[m - 1], fcubes[f2], cubes1[m]);
+          cubes1[m] = cubes1[m - 1] * fcubes[f2];
         inv1[m] = i2 + (2 - cnt);
         next1[m] |= uint64_t(0x3f) << i1; // block all simple moves on both faces
         next1[m] |= uint64_t(0x1ff) << i3;
@@ -125,7 +125,7 @@ namespace move {
         for (int cnt2 = 0; cnt2 < 3; cnt2++) {
           int m = i3 + 3 * cnt1 + cnt2;
           names1[m] = "(" + names1[i1 + cnt1] + " " + names1[i2 + cnt2] + ")";
-          cubie::mul(cubes1[i1 + cnt1], cubes1[i2 + cnt2], cubes1[m]);
+          cubes1[m] = cubes1[i1 + cnt1] * cubes1[i2 + cnt2];
           inv1[m] = i3 + 3 * (2 - cnt1) + (2 - cnt2);
           next1[m] |= uint64_t(0x7fff) << 15 * ax; // block all simple and axial moves
         }
@@ -160,7 +160,7 @@ namespace move {
     for (int m1 = 0; m1 < 45; m1++) {
       for (int m2 = 0; m2 < 45; m2++) {
         merge[m1][m2] = -1;
-        cubie::mul(cubes1[m1], cubes1[m2], c);
+        c = cubes1[m1] * cubes1[m2];
         for (int i = 0; i < 45; i++) {
           if (c == cubes1[i]) {
             merge[m1][m2] = i;

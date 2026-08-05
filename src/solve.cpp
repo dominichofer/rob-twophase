@@ -193,8 +193,8 @@ namespace solve {
     for (int dir = 0; dir < N_DIRS; dir++) {
       const cubie::cube& c1 = (dir & 1) ? invc : c; // reference is enough, we do not need to copy
       int rot = sym::ROT * (dir / 2);
-      cubie::mul(sym::cubes[sym::inv[rot]], c1, tmp1);
-      cubie::mul(tmp1, sym::cubes[rot], tmp2);
+      tmp1 = sym::cubes[sym::inv[rot]] * c1;
+      tmp2 = tmp1 * sym::cubes[rot];
 
       dirs[dir].flip = coord::get_flip(tmp2);
       dirs[dir].slice = coord::get_slice(tmp2);
