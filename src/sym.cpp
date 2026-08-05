@@ -1,5 +1,7 @@
 #include "sym.h"
 
+#include <functional>
+
 namespace sym {
 
   using namespace cubie::corner;
@@ -109,9 +111,9 @@ namespace sym {
   void init_conjcoord(
     std::array<uint16_t, COUNT_SUB>* conj_coord,
     int n_coords,
-    int (*get_coord)(const cubie::cube&),
-    void (*set_coord)(cubie::cube&, int),
-    void (*mul)(const cubie::cube&, const cubie::cube&, cubie::cube&)
+    std::function<int(const cubie::cube&)> get_coord,
+    std::function<void(cubie::cube&, int)> set_coord,
+    std::function<void(const cubie::cube&, const cubie::cube&, cubie::cube&)> mul
   ) {
     cubie::cube c1 = cubie::SOLVED_CUBE; // make sure all multiplications will work
     cubie::cube c2;

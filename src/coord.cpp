@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <bitset>
 #include <cstring>
+#include <functional>
 
 #include "cubie.h"
 
@@ -221,9 +222,9 @@ namespace coord {
   void init_move(
     std::array<uint16_t, move::COUNT>* move_coord,
     int n_coord,
-    int (*get_coord)(const cubie::cube&),
-    void (*set_coord)(cubie::cube&, int),
-    void (*mul)(const cubie::cube&, const cubie::cube&, cubie::cube&),
+    std::function<int(const cubie::cube&)> get_coord,
+    std::function<void(cubie::cube&, int)> set_coord,
+    std::function<void(const cubie::cube&, const cubie::cube&, cubie::cube&)> mul,
     bool phase2 = false
   ) {
     cubie::cube c1 = cubie::SOLVED_CUBE; // coords only affect perm or ori -> one would be uninitialized

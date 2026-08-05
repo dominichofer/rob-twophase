@@ -1,6 +1,7 @@
 #include <array>
 #include <bitset>
 #include <chrono>
+#include <functional>
 #include <iostream>
 #include <strings.h>
 
@@ -44,7 +45,7 @@ void test_cubie() {
   ok();
 }
 
-void test_getset(int (*get_coord)(const cubie::cube&), void (*set_coord)(cubie::cube&, int), int count) {
+void test_getset(std::function<int(const cubie::cube&)> get_coord, std::function<void(cubie::cube&, int)> set_coord, int count) {
   cubie::cube c;
   for (int i = 0; i < count; i++) {
     set_coord(c, i);

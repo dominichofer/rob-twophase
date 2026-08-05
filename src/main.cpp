@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <fstream>
+#include <functional>
 #include <getopt.h>
 #include <iostream>
 #include <vector>
@@ -71,7 +72,7 @@ bool check(const cubie::cube &c, const std::vector<int>& sol) {
   return c1 == cubie::SOLVED_CUBE;
 }
 
-double mean(const std::vector<std::vector<int>>& sols, int (*len)(const std::vector<int>&)) {
+double mean(const std::vector<std::vector<int>>& sols, std::function<int(const std::vector<int>&)> len) {
   double total = 0;
   for (auto& sol : sols)
     total += len(sol);
