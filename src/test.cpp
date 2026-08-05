@@ -17,28 +17,27 @@ void test_cubie() {
   std::cout << "Testing cubie level ..." << std::endl;
   cubie::cube c = cubie::SOLVED_CUBE;
 
-  cubie::cube tmp1, tmp2;
-  cubie::inv(c, tmp1);
+  cubie::cube tmp1 = c.inverse();
+  cubie::cube tmp2 = c * tmp1;
   if (c != tmp1)
     error();
-  tmp2 = c * tmp1;
   if (c != tmp2)
     error();
 
   cubie::shuffle(c);
-  cubie::inv(c, tmp1);
+  tmp1 = c.inverse();
   tmp2 = c * tmp1;
   if (tmp2 != cubie::SOLVED_CUBE)
     error();
 
   for (int i = 0; i < 100; i++) {
     cubie::shuffle(c);
-    if (cubie::check(c) != 0)
+    if (c.check() != 0)
       error();
   }
   cubie::shuffle(c);
   std::swap(c.c_prm[0], c.c_prm[1]);
-  if (check(c) == 0)
+  if (c.check() == 0)
     error();
 
   ok();

@@ -235,14 +235,14 @@ namespace coord {
 
       if (phase2) { // Ud_edges2 is only defined for phase 2 moves
         for (uint64_t moves = move::p2_mask; moves; moves &= moves - 1) {
-          int m = std::countr_zero(moves);
-          mul(c1, move::cubes[m], c2);
-          move_coord[coord][m] = get_coord(c2);
+          int move = std::countr_zero(moves);
+          mul(c1, move::cubes[move], c2);
+          move_coord[coord][move] = get_coord(c2);
         }
       } else {
-        for (int m = 0; m < move::COUNT; m++) {
-          mul(c1, move::cubes[m], c2);
-          move_coord[coord][m] = get_coord(c2);
+        for (int move = 0; move < move::COUNT; move++) {
+          mul(c1, move::cubes[move], c2);
+          move_coord[coord][move] = get_coord(c2);
         }
       }
     }

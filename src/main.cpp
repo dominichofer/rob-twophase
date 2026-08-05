@@ -223,15 +223,14 @@ int main(int argc, char *argv[]) {
           std::cout << "Face-error " << err << "." << std::endl;
           continue;
         }
-        err = cubie::check(c);
+        err = c.check();
         if (err != 0) {
           std::cout << "Cubie-error " << err << "." << std::endl;
           continue;
         }
       } else if (mode == "scramble") {
         cubie::shuffle(c);
-        cubie::cube tmp;
-        cubie::inv(c, tmp);
+        cubie::cube tmp = c.inverse();
         std::cout << face::from_cubie(tmp) << std::endl; // the solution we find will actually be a scramble for the inverse
       } else {
         std::cout << "Error." << std::endl;

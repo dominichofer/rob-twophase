@@ -56,6 +56,9 @@ namespace cubie {
     bool operator==(const cube&) const = default;
     bool operator!=(const cube&) const = default;
     cube operator*(const cube& other) const;
+
+    cube inverse() const;
+    int check() const; // check a cube for being solvable
   };
 
   const cube SOLVED_CUBE = {
@@ -73,7 +76,5 @@ namespace cubie {
     void mul(const cube& c1, const cube& c2, cube& into); // multiply only edge cubies
   }
 
-  void inv(const cube& c, cube& into); // compute the inverse cube
   void shuffle(cube& c); // generate a uniformly random cube
-  int check(const cube& c); // check a cube for being solvable
 }

@@ -188,8 +188,7 @@ namespace solve {
     prepare(); // make sure we are prepared; will do nothing if that should already be the case
 
     cubie::cube tmp1, tmp2;
-    cubie::cube invc;
-    cubie::inv(c, invc);
+    cubie::cube invc = c.inverse();
 
     for (int dir = 0; dir < N_DIRS; dir++) {
       const cubie::cube& c1 = (dir & 1) ? invc : c; // reference is enough, we do not need to copy

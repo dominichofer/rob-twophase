@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <random>
+#include <span>
 
 #include "coord.h"
 
@@ -37,6 +38,32 @@ namespace cubie {
     }
   }
 
+  cube cube::operator*(const cube& c2) const {
+    cube result;
+    for (int i = 0; i < corner::COUNT; i++)
+      result.c_prm[i] = c_prm[c2.c_prm[i]];
+    for (int i = 0; i < corner::COUNT; i++)
+      result.c_ori[i] = mul_c_oris[c_ori[c2.c_prm[i]]][c2.c_ori[i]];
+    for (int i = 0; i < edge::COUNT; i++)
+      result.e_prm[i] = e_prm[c2.e_prm[i]];
+    for (int i = 0; i < edge::COUNT; i++)
+      result.e_ori[i] = (e_ori[c2.e_prm[i]] + c2.e_ori[i]) & 1;
+    return result;
+  }
+
+  cube cube::inverse() const {
+    cube result;
+    for (int corner = 0; corner < corner::COUNT; corner++)
+      result.c_prm[c_prm[corner]] = corner; // inv[a[i]] = i
+    for (int edge = 0; edge < edge::COUNT; edge++)
+      result.e_prm[e_prm[edge]] = edge;
+    for (int i = 0; i < corner::COUNT; i++)
+      result.c_ori[i] = inv_c_ori[c_ori[result.c_prm[i]]];
+    for (int i = 0; i < edge::COUNT; i++)
+      result.e_ori[i] = e_ori[result.e_prm[i]];
+    return result;
+  }
+
   // Permutation parity = #inversions % 2
   template <std::size_t N>
   bool parity(const std::array<int, N>& perm) {
@@ -48,24 +75,6 @@ namespace cubie {
       }
     }
     return par & 1;
-  }
-
-  cube cube::operator*(const cube& c2) const {
-    cube result;
-    corner::mul(*this, c2, result);
-    edge::mul(*this, c2, result);
-    return result;
-  }
-
-  void inv(const cube& c, cube& into) {
-    for (int corner = 0; corner < corner::COUNT; corner++)
-      into.c_prm[c.c_prm[corner]] = corner; // inv[a[i]] = i
-    for (int edge = 0; edge < edge::COUNT; edge++)
-      into.e_prm[c.e_prm[edge]] = edge;
-    for (int i = 0; i < corner::COUNT; i++)
-      into.c_ori[i] = inv_c_ori[c.c_ori[into.c_prm[i]]];
-    for (int i = 0; i < edge::COUNT; i++)
-      into.e_ori[i] = c.e_ori[into.e_prm[i]];
   }
 
   template <std::size_t N>
@@ -80,8 +89,7 @@ namespace cubie {
       return true;
   }
 
-  template <std::size_t N>
-  bool valid_orientation(const std::array<int, N>& ori, int count)
+  bool valid_orientation(std::span<const int> ori, int count)
   {
       int sum = 0;
 
@@ -94,21 +102,20 @@ namespace cubie {
       return sum % count == 0;
   }
 
-  int check(const cube& c)
-  {
-      if (!is_permutation(c.c_prm))
+  int cube::check() const {
+      if (!is_permutation(c_prm))
           return 1; // invalid corner permutation
 
-      if (!valid_orientation(c.c_ori, 3))
+      if (!valid_orientation(c_ori, 3))
           return 2; // invalid corner orientation
 
-      if (!is_permutation(c.e_prm))
+      if (!is_permutation(e_prm))
           return 3; // invalid edge permutation
 
-      if (!valid_orientation(c.e_ori, 2))
+      if (!valid_orientation(e_ori, 2))
           return 4; // invalid edge orientation
 
-      if (parity(c.c_prm) != parity(c.e_prm))
+      if (parity(c_prm) != parity(e_prm))
           return 5; // corner and edge permutation parity mismatch
 
       return 0;
